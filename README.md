@@ -30,4 +30,4 @@ These are features which I haven't gotten around to implementing yet. Contributi
 
 # License
 
-Quartermaster is dual-licensed under the Apache-2.0 and MIT licenses.
+This project and all contributions to it are dual-licensed under the Apache-2.0 and MIT licenses.
