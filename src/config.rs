@@ -57,17 +57,37 @@ pub struct LocalStorage {
 pub struct S3Storage {
     pub bucket: String,
     pub region: String,
+
+    pub aws_access_key_id: Option<String>,
+    pub aws_secret_access_key: Option<String>,
+    pub aws_security_token: Option<String>,
+    pub aws_session_token: Option<String>,
+
+    pub sts_session_name: Option<String>,
+    pub sts_role_arn: Option<String>,
+    pub sts_web_identity_token_file: Option<String>,
+
+    pub use_profile_credentials: bool,
+    pub profile_section: Option<String>,
+
+    pub use_instance_credentials: bool,
 }
 
 impl Config {
     pub fn load() -> Result<Self, config::ConfigError> {
-        let config_path =
-            env::var("QUARTERMASTER_CONFIG_FILE").unwrap_or_else(|_| String::from("config.toml"));
+        let config_path = env::var("QUARTERMASTER_CONFIG_FILE")
+            .unwrap_or_else(|_| String::from("/etc/quartermaster/config.toml"));
 
         Ok(config::Config::builder()
-            .add_source(config::Environment::with_prefix("QUARTERMASTER"))
             .add_source(
-                config::File::new(&config_path, FileFormat::Toml).format(config::FileFormat::Toml),
+                config::File::new(&config_path, FileFormat::Toml)
+                    .format(config::FileFormat::Toml)
+                    .required(false),
+            )
+            .add_source(
+                config::Environment::with_prefix("QUARTERMASTER")
+                    .prefix_separator("__")
+                    .separator("__"),
             )
             .build()?
             .try_deserialize()?)
@@ -82,9 +102,15 @@ mod tests {
     fn test_config_file() {
         env::set_var(
             "QUARTERMASTER_CONFIG_FILE",
-            concat!(env!("CARGO_MANIFEST_DIR"), "/config.toml"),
+            concat!(env!("CARGO_MANIFEST_DIR"), "/examples/config.toml"),
         );
+        env::set_var("QUARTERMASTER__SERVER__ROOT_URL", "http://some.other.url/");
 
-        Config::load().unwrap();
+        let config = Config::load().unwrap();
+
+        assert_eq!(
+            config.server.root_url,
+            Url::parse("http://some.other.url/").unwrap()
+        );
     }
 }

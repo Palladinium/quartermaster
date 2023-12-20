@@ -1,4 +1,4 @@
-use std::{env, str::FromStr};
+use std::{borrow::Cow, env, str::FromStr};
 
 use crate::{crate_name::CrateName, index::IndexFile, storage::Error};
 
@@ -8,7 +8,7 @@ pub struct S3Storage {
 
 impl S3Storage {
     pub fn new(config: &crate::config::S3Storage) -> Result<Self, Error> {
-        let credentials = load_credentials().map_err(ConfigurationError::Credentials)?;
+        let credentials = load_credentials(config).map_err(ConfigurationError::Credentials)?;
 
         let bucket = s3::Bucket::new(
             &config.bucket,
@@ -35,13 +35,43 @@ impl S3Storage {
 }
 
 #[tracing::instrument]
-pub fn load_credentials() -> Result<s3::creds::Credentials, s3::creds::error::CredentialsError> {
-    // TODO: Maybe put in a PR with rust-s3 to have this work out of the box with Credentials::new
-    if let Ok(sts_session_name) = env::var("STS_SESSION_NAME") {
-        s3::creds::Credentials::from_sts_env(&sts_session_name)
-    } else {
-        s3::creds::Credentials::new(None, None, None, None, None)
+pub fn load_credentials(
+    config: &crate::config::S3Storage,
+) -> Result<s3::creds::Credentials, s3::creds::error::CredentialsError> {
+    if let Some(session_name) = &config.sts_session_name {
+        let role_arn = if let Some(role_arn) = &config.sts_role_arn {
+            Cow::Borrowed(role_arn)
+        } else {
+            Cow::Owned(env::var("AWS_ROLE_ARN")?)
+        };
+
+        let web_identity_token_file =
+            if let Some(web_identity_token_file) = &config.sts_web_identity_token_file {
+                Cow::Borrowed(web_identity_token_file)
+            } else {
+                Cow::Owned(env::var("AWS_WEB_IDENTITY_TOKEN_FILE")?)
+            };
+
+        let web_identity_token = std::fs::read_to_string(web_identity_token_file.as_str())?;
+
+        return s3::creds::Credentials::from_sts(&role_arn, session_name, &web_identity_token);
     }
+
+    if config.use_profile_credentials {
+        return s3::creds::Credentials::from_profile(config.profile_section.as_deref());
+    }
+
+    if config.use_instance_credentials {
+        return s3::creds::Credentials::from_instance_metadata();
+    }
+
+    s3::creds::Credentials::new(
+        config.aws_access_key_id.as_deref(),
+        config.aws_secret_access_key.as_deref(),
+        config.aws_security_token.as_deref(),
+        config.aws_session_token.as_deref(),
+        None,
+    )
 }
 
 #[derive(Debug, thiserror::Error)]

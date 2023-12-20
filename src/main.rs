@@ -28,7 +28,8 @@ async fn main() -> eyre::Result<()> {
 
     let config = Config::load()?;
 
-    let auth = auth::Auth::new(&config.auth);
+    let auth_config = config.auth.clone();
+    let auth = tokio::task::spawn_blocking(move || auth::Auth::new(&auth_config)).await?;
     let storage = storage::Storage::new(&config.storage).await?;
 
     let state = Arc::new(AppState {

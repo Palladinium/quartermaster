@@ -1,0 +1,58 @@
+[server]
+## The root URL through which this registry can be reached.
+## This is required, and it will be used to populate the response for the /index/config.json file.
+root_url = "http://foo.bar/"
+
+## Addresses to bind to. Defaults to 0.0.0.0:80 and [::]:80.
+bind = ["10.1.1.1:80"]
+
+[auth]
+
+## Disable auth entirely, and allow all requests. This is generally a bad idea.
+# type = "none"
+
+## Simple auth based on an allowlist of tokens.
+## Tokens can be any string that's sufficiently long and hard to guess - a good password would work too.
+## On Linux, you can generate a good token with:
+## openssl rand -base64 48
+type = "token_allowlist"
+tokens = []
+
+
+[storage]
+
+## Local filesystem storage
+
+type = "local"
+path = "/crates"
+
+## S3-backed storage.
+## The bucket and region keys are required.
+# type = "s3"
+# bucket = "my-crates"
+# region = "ap-southeast-2"
+
+## S3 Credentials.
+## If no specific credential methods are specified, we rely on rust-s3's default methods to attempt to find valid credentials.
+## It will check things like `~/.aws/credentials` and standard AWS environment variables - this is ok for most development and some production environments.
+## If you know what you're doing and want more control, pick a specific authentication method from the ones below.
+
+## Explicit access/secret key authentication, and optionally a security and session token.
+# aws_access_key_id = "foo"
+# aws_secret_access_key = "shoosh"
+# aws_security_token = "foo"
+# aws_session_token = "foo"
+
+## Fetch access key through an STS request.
+## The unprefixed `AWS_ROLE_ARN` `AWS_WEB_IDENTITY_TOKEN_FILE` environment variables are also checked if the corresponding config value isn't set.
+# sts_session_name = "quartermaster"
+# sts_role_arn = "foo"
+# sts_web_identity_token_file = "foo"
+
+## Use profile credentials. This reads from ~/.aws/credentials.
+## If profile_section is specified, use that particular section in the credential file.
+# use_profile_credentials = true
+# profile_section = "quartermaster"
+
+## Use instance credentials.
+# use_instance_credentials = true

@@ -117,7 +117,7 @@ impl CrateName {
                 }
             }
 
-            4.. => unreachable!(),
+            _ => unreachable!(),
         };
 
         Ok(Self::new(crate_name)?)
