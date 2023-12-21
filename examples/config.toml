@@ -11,13 +11,12 @@ bind = ["10.1.1.1:80"]
 ## Disable auth entirely, and allow all requests. This is generally a bad idea.
 # type = "none"
 
-## Simple auth based on an allowlist of tokens.
-## Tokens can be any string that's sufficiently long and hard to guess - a good password would work too.
-## On Linux, you can generate a good token with:
-## openssl rand -base64 48
-type = "token_allowlist"
+## Simple auth based on a list of valid tokens.
+## Tokens can be any string that's sufficiently long and hard to guess - a strong password works too.
+## Here's one of many possible ways to generate a token on Linux:
+## $ openssl rand -base64 48
+type = "token_list"
 tokens = []
-
 
 [storage]
 

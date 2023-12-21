@@ -2,16 +2,16 @@
 
 A dead-simple, minimal [Cargo Alternate Registry](https://doc.rust-lang.org/cargo/reference/registries.html) suitable for private registries.
 
-# Why?
+## Why?
 
 If you are tired of using git dependencies for your private crates and just want your own cargo registry now, Quartermaster is for you.
 
-## Features
+### Features
 
 - Local filesystem or S3-based backing storage
 - Extremely simple token-based auth
 
-## Non-features
+### Non-features
 
 If you need any of these features, you're probably better off looking at alternatives.
 
@@ -19,20 +19,18 @@ If you need any of these features, you're probably better off looking at alterna
 - Support for Rust versions before 1.74
 - Git index protocol (only sparse index supported)
 
-## Limitations
+### Limitations
 
 These are features which I haven't gotten around to implementing yet. Contributions are welcome and appreciated!
 
-- **HTTPS/SSL**: at the moment, Quartermaster is HTTP only. **Do not** expose Quartermaster to the open Internet. Do put it behind a reverse proxy which handles SSL termination like [NGINX](http://nginx.org/), or a VPN like [https://www.wireguard.com/](Wireguard) or [https://openvpn.net/](OpenVPN), or do both!
-- More granular auth. Currently, any valid token has full read/write access to the repository.
-- More auth methods, e.g. OpenID. I have no need for them yet.
-- Better cross-platform support. While in theory nothing stops Quartermaster from running on other platforms like Windows, MacOS or BSDs, I have only tested it on Linux. Feedback is welcome!
+- **No HTTPS/SSL**: at the moment, Quartermaster is HTTP only. **Do not** expose Quartermaster to the open Internet. Do put it behind a reverse proxy which handles SSL termination like [NGINX](http://nginx.org/), or a VPN like [https://www.wireguard.com/](Wireguard) or [https://openvpn.net/](OpenVPN), or do both!
+- Granular auth: Currently, any valid token has full read/write access to the repository.
+- Auth methods: e.g. OpenID. I have no need for them yet.
+- Cross-platform support: While in theory nothing stops Quartermaster from running on other platforms like Windows, MacOS or BSDs, I have only tested it on Linux. Feedback is welcome!
 
-# Installation
+## Installation
 
-## Docker
-
-## Arch Linux
+### Arch Linux
 
 Quartermaster has a [package](http://todo) on the Arch User Repository. Install it with your preferred AUR wrapper or [build it yourself](https://wiki.archlinux.org/title/Arch_User_Repository#Installing_and_upgrading_packages). For example, using yay:
 
@@ -46,7 +44,7 @@ Configure Quartermaster by editing `/etc/quartermaster/config.toml` and `/etc/qu
 systemctl enable quartermaster.service
 ```
 
-## Cargo
+### Cargo
 
 You can compile Quartermaster yourself with cargo.
 
@@ -54,15 +52,15 @@ You can compile Quartermaster yourself with cargo.
 cargo install --frozen quartermaster
 ```
 
-## Docker
+### Docker
 
-If you prefer running Quartermaster in a container, an [image](http://todo) is available on DockerHub. The preferred method of configuration when using Docker is through environment variables, but config files are still supported.
+If you prefer running Quartermaster in a container, an [image](https://hub.docker.com/r/palladinium/quartermaster) is available on DockerHub. The preferred method of configuration when using Docker is through environment variables, but config files are still supported.
 
 ```shell
 docker pull palladinium/quartermaster
 ```
 
-# Configuration
+## Configuration
 
 Quartermaster uses the excellent [config](https://github.com/mehcode/config-rs) crate to support configuration through either a `toml` config file or environment variables, or a combination of both. The matching environment variable name is constructed by using double underscores as a separator, for example a configuration option `foo.bar_baz.boz` can be equivalently set through the environment variable `QUARTERMASTER__FOO__BAR_BAZ__BOZ`. Arrays of values can be defined by comma-separating individual values. Environment variables will override values set in the config file.
 
@@ -72,6 +70,6 @@ Take care when using config files to set secret values such as auth tokens and S
 
 See the [example configuration](examples/config.toml) for more documentation on the individual options.
 
-# License
+## License
 
 This project and all contributions to it are dual-licensed under the Apache-2.0 and MIT licenses.

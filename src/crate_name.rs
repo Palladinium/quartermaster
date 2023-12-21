@@ -134,10 +134,6 @@ impl CrateName {
                 .join(&self.0),
         }
     }
-
-    pub fn as_str(&self) -> &str {
-        self.0.as_str()
-    }
 }
 
 impl Display for CrateName {
@@ -152,8 +148,7 @@ impl<'de> Deserialize<'de> for CrateName {
         D: serde::Deserializer<'de>,
     {
         let s: Cow<'de, str> = Deserialize::deserialize(deserializer)?;
-
-        Ok(Self::new(&s).map_err(D::Error::custom)?)
+        Self::new(&s).map_err(D::Error::custom)
     }
 }
 

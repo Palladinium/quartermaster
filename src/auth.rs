@@ -3,9 +3,11 @@ use tracing::{info, warn};
 
 use crate::error::ErrorResponse;
 
+pub mod token_list;
+
 pub enum Auth {
     None,
-    EnvTokens,
+    TokenList(token_list::TokenList),
 }
 
 impl Auth {
@@ -18,10 +20,10 @@ impl Auth {
                 Self::None
             }
 
-            crate::config::Auth::EnvTokens => {
-                info!("Loading allowed auth tokens from environment variable");
+            crate::config::Auth::TokenList(tokens) => {
+                info!("Using token list authentication");
 
-                Self::EnvTokens
+                Self::TokenList(token_list::TokenList::new(tokens))
             }
         }
     }
@@ -29,14 +31,15 @@ impl Auth {
     pub fn auth_required(&self) -> bool {
         match self {
             Self::None => false,
-            Self::EnvTokens => true,
+            Self::TokenList(_) => true,
         }
     }
 
+    // TODO: Implement more granular authorization
     pub fn authorize(&self, token: Option<&str>) -> Result<(), Error> {
         match self {
             Self::None => Ok(()),
-            Self::EnvTokens => todo!(),
+            Self::TokenList(tokens) => tokens.authorize(token),
         }
     }
 }

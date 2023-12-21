@@ -1,5 +1,6 @@
 use std::{
     env,
+    fmt::{self, Debug, Formatter},
     net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6},
     path::PathBuf,
 };
@@ -34,7 +35,20 @@ fn default_bind() -> Vec<SocketAddr> {
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Auth {
     None,
-    EnvTokens,
+    TokenList(TokenListAuth),
+}
+
+#[derive(Clone, Deserialize)]
+pub struct TokenListAuth {
+    pub tokens: Vec<String>,
+}
+
+impl Debug for TokenListAuth {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.debug_struct("TokenListAuth")
+            .field("tokens", &"<REDACTED>")
+            .finish()
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
