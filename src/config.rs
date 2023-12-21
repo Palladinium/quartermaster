@@ -56,7 +56,7 @@ impl Debug for TokenListAuth {
 pub enum Storage {
     Local(LocalStorage),
     #[cfg(feature = "s3")]
-    S3(S3Storage),
+    S3(Box<S3Storage>),
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -92,7 +92,7 @@ impl Config {
         let config_path = env::var("QUARTERMASTER_CONFIG_FILE")
             .unwrap_or_else(|_| String::from("/etc/quartermaster/config.toml"));
 
-        Ok(config::Config::builder()
+        config::Config::builder()
             .add_source(
                 config::File::new(&config_path, FileFormat::Toml)
                     .format(config::FileFormat::Toml)
@@ -104,7 +104,7 @@ impl Config {
                     .separator("__"),
             )
             .build()?
-            .try_deserialize()?)
+            .try_deserialize()
     }
 }
 

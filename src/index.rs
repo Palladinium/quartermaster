@@ -152,8 +152,7 @@ impl<'de> Deserialize<'de> for MinRustVersion {
         D: Deserializer<'de>,
     {
         let s: Cow<'de, str> = Deserialize::deserialize(deserializer)?;
-
-        Ok(Self::from_str(&s).map_err(D::Error::custom)?)
+        Self::from_str(&s).map_err(D::Error::custom)
     }
 }
 

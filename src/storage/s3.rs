@@ -30,7 +30,7 @@ impl S3Storage {
             .await
             .map_err(Error::S3)?;
 
-        Ok(serde_json::from_slice(contents.as_slice()).map_err(Error::Json)?)
+        serde_json::from_slice(contents.as_slice()).map_err(Error::Json)
     }
 }
 
