@@ -1,17 +1,17 @@
-#[cfg(feature = "s3")]
-pub mod s3;
-
-pub mod local;
-
 use std::io;
 
-use axum::http::StatusCode;
+use axum::{body::Body, http::StatusCode};
 
 use crate::{
     crate_name::CrateName,
     error::{ErrorResponse, ResponseError},
     index::IndexFile,
 };
+
+#[cfg(feature = "s3")]
+pub mod s3;
+
+pub mod local;
 
 pub enum Storage {
     Local(local::LocalStorage),
@@ -35,6 +35,18 @@ impl Storage {
             Storage::Local(local) => local.get_index(crate_name).await,
             #[cfg(feature = "s3")]
             Storage::S3(s3) => s3.get_index(crate_name).await,
+        }
+    }
+
+    pub async fn get_crate(
+        &self,
+        crate_name: &CrateName,
+        version: semver::Version,
+    ) -> Result<Body, Error> {
+        match self {
+            Storage::Local(local) => local.get_crate(crate_name, version).await,
+            #[cfg(feature = "s3")]
+            Storage::S3(s3) => s3.get_crate(crate_name, version).await,
         }
     }
 }

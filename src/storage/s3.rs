@@ -1,4 +1,6 @@
-use std::{borrow::Cow, env, str::FromStr};
+use std::{borrow::Cow, env, path::PathBuf, str::FromStr};
+
+use axum::body::Body;
 
 use crate::{crate_name::CrateName, index::IndexFile, storage::Error};
 
@@ -31,6 +33,24 @@ impl S3Storage {
             .map_err(Error::S3)?;
 
         serde_json::from_slice(contents.as_slice()).map_err(Error::Json)
+    }
+
+    pub async fn get_crate(
+        &self,
+        crate_name: &CrateName,
+        version: semver::Version,
+    ) -> Result<Body, Error> {
+        let file_path = PathBuf::from("crates").join(crate_name.crate_path(version));
+
+        // TODO: rust-s3 has a get_object_stream method, but its return type is !Send, so we can't convert it to a Body.
+        // So we just have to download the whole file and then serve it all at once rather than streaming it.
+        let data = self
+            .bucket
+            .get_object(file_path.to_str().unwrap())
+            .await
+            .map_err(Error::S3)?;
+
+        Ok(Body::from(data.to_vec()))
     }
 }
 

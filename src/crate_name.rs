@@ -134,6 +134,12 @@ impl CrateName {
                 .join(&self.0),
         }
     }
+
+    pub fn crate_path(&self, version: semver::Version) -> PathBuf {
+        PathBuf::from(&self.0)
+            .join(version.to_string())
+            .join(format!("{}.crate", &self.0))
+    }
 }
 
 impl Display for CrateName {

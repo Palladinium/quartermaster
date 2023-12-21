@@ -6,7 +6,7 @@ use axum::{
     Json,
 };
 use serde::Serialize;
-use tracing::info;
+use tracing::{error, info};
 
 pub struct ErrorResponse {
     pub status: StatusCode,
@@ -16,6 +16,14 @@ pub struct ErrorResponse {
 impl ErrorResponse {
     pub fn not_found<E: Display>(error: E) -> Self {
         info!("Responding with 404 Not Found: {error}");
+        Self {
+            status: StatusCode::NOT_FOUND,
+            errors: Vec::new(),
+        }
+    }
+
+    pub fn internal_server_error<E: Display>(error: E) -> Self {
+        error!("Responding with 500 Internal Server Error: {error}");
         Self {
             status: StatusCode::NOT_FOUND,
             errors: Vec::new(),
