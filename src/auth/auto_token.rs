@@ -24,7 +24,7 @@ impl AutoToken {
                     let new_token = generate_token()?;
 
                     if let Some(parent) = config.token_file.parent() {
-                        tokio::fs::create_dir_all(parent).await.map_err(Error::Io)?;
+                        tokio::fs::create_dir_all(&parent).await.map_err(Error::Io)?;
                     }
 
                     save_token(&config.token_file, &new_token).await?;
@@ -69,6 +69,8 @@ async fn save_token(path: &Path, token: &str) -> Result<(), Error> {
     use tokio::{fs::OpenOptions, io::AsyncWriteExt};
 
     let mut file = OpenOptions::new()
+        .write(true)
+        .truncate(true)
         .create(true)
         .mode(0o600)
         .open(path)
