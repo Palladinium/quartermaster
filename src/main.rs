@@ -22,7 +22,7 @@ use semver::BuildMetadata;
 use serde::{Deserialize, Serialize};
 use simple_eyre::eyre;
 use tokio::sync::RwLock;
-use tracing::debug;
+use tracing::{debug, warn};
 use url::Url;
 
 mod auth;
@@ -262,7 +262,16 @@ type PublishBadges = BTreeMap<String, PublishBadge>;
 type PublishBadge = BTreeMap<String, String>;
 
 #[derive(Serialize)]
-struct PublishResponse {}
+struct PublishResponse {
+    warnings: PublishWarnings,
+}
+
+#[derive(Serialize)]
+struct PublishWarnings {
+    invalid_categories: Vec<String>,
+    invalid_badges: Vec<String>,
+    other: Vec<String>,
+}
 
 #[tracing::instrument(skip_all)]
 async fn put_publish_crate(
@@ -273,6 +282,8 @@ async fn put_publish_crate(
     state
         .auth
         .authorize(authorization.as_ref().map(|a| a.token()))?;
+
+    let mut warnings = Vec::new();
 
     let Some(body_size) = body.size_hint().exact() else {
         return Err(ErrorResponse::from_status(StatusCode::LENGTH_REQUIRED));
@@ -332,6 +343,14 @@ async fn put_publish_crate(
         // We ignore build metadata
         build: BuildMetadata::EMPTY,
     };
+
+    if !publish_request.vers.build.is_empty() {
+        warn!("Ignoring build metadata");
+        warnings.push(format!(
+            "Build metadata in crate version was ignored: {}",
+            &publish_request.vers.build
+        ));
+    }
 
     {
         let _guard = state.lock.write().await;
@@ -408,5 +427,11 @@ async fn put_publish_crate(
             .await?;
     }
 
-    Ok(Json(PublishResponse {}))
+    Ok(Json(PublishResponse {
+        warnings: PublishWarnings {
+            invalid_categories: Vec::new(),
+            invalid_badges: Vec::new(),
+            other: warnings,
+        },
+    }))
 }
