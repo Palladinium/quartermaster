@@ -99,7 +99,10 @@ impl Config {
             .add_source(
                 config::Environment::with_prefix("QUARTERMASTER")
                     .prefix_separator("__")
-                    .separator("__"),
+                    .separator("__")
+                    .list_separator(",")
+                    .with_list_parse_key("server.bind")
+                    .try_parsing(true),
             )
             .build()?
             .try_deserialize()
