@@ -60,6 +60,8 @@ async fn main() -> eyre::Result<()> {
         .typed_get(get_index_file)
         .typed_get(get_download_crate)
         .route("/api/v1/crates/new", put(put_publish_crate))
+        .typed_delete(delete_yank_crate)
+        .typed_put(put_unyank_crate)
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(bind.as_slice()).await?;
@@ -434,4 +436,104 @@ async fn put_publish_crate(
             other: warnings,
         },
     }))
+}
+
+#[derive(Debug, Deserialize, TypedPath)]
+#[typed_path("/api/v1/crates/:crate_name/:version/yank")]
+struct DeleteYankCrate {
+    crate_name: String,
+    version: String,
+}
+
+#[derive(Serialize)]
+struct YankResponse {
+    ok: bool,
+}
+
+#[tracing::instrument(skip(state, authorization))]
+async fn delete_yank_crate(
+    DeleteYankCrate {
+        crate_name,
+        version,
+    }: DeleteYankCrate,
+    State(state): State<Arc<AppState>>,
+    authorization: Option<TypedHeader<Authorization<Bearer>>>,
+) -> Result<Json<YankResponse>, ErrorResponse> {
+    state
+        .auth
+        .authorize(authorization.as_ref().map(|a| a.token()))?;
+
+    let crate_name = CrateName::new(&crate_name).map_err(ErrorResponse::not_found)?;
+    let version = semver::Version::parse(&version).map_err(ErrorResponse::not_found)?;
+
+    {
+        let _guard = state.lock.write().await;
+
+        let mut index_file = state.storage.read_index_file(&crate_name).await?;
+
+        let index_entry = index_file
+            .entries
+            .iter_mut()
+            .find(|entry| entry.vers == version)
+            .ok_or_else(|| ErrorResponse::from_status(StatusCode::NOT_FOUND))?;
+
+        index_entry.yanked = true;
+
+        state
+            .storage
+            .write_index_file(&crate_name, &index_file)
+            .await?;
+    }
+
+    Ok(Json(YankResponse { ok: true }))
+}
+
+#[derive(Debug, Deserialize, TypedPath)]
+#[typed_path("/api/v1/crates/:crate_name/:version/unyank")]
+struct PutUnyankCrate {
+    crate_name: String,
+    version: String,
+}
+
+#[derive(Serialize)]
+struct UnyankResponse {
+    ok: bool,
+}
+
+#[tracing::instrument(skip(state, authorization))]
+async fn put_unyank_crate(
+    PutUnyankCrate {
+        crate_name,
+        version,
+    }: PutUnyankCrate,
+    State(state): State<Arc<AppState>>,
+    authorization: Option<TypedHeader<Authorization<Bearer>>>,
+) -> Result<Json<UnyankResponse>, ErrorResponse> {
+    state
+        .auth
+        .authorize(authorization.as_ref().map(|a| a.token()))?;
+
+    let crate_name = CrateName::new(&crate_name).map_err(ErrorResponse::not_found)?;
+    let version = semver::Version::parse(&version).map_err(ErrorResponse::not_found)?;
+
+    {
+        let _guard = state.lock.write().await;
+
+        let mut index_file = state.storage.read_index_file(&crate_name).await?;
+
+        let index_entry = index_file
+            .entries
+            .iter_mut()
+            .find(|entry| entry.vers == version)
+            .ok_or_else(|| ErrorResponse::from_status(StatusCode::NOT_FOUND))?;
+
+        index_entry.yanked = false;
+
+        state
+            .storage
+            .write_index_file(&crate_name, &index_file)
+            .await?;
+    }
+
+    Ok(Json(UnyankResponse { ok: true }))
 }
