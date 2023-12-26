@@ -5,11 +5,13 @@ use tracing::{info, warn};
 
 use crate::error::ErrorResponse;
 
-pub mod auto_token;
+pub mod token;
+pub mod token_file;
 
 pub enum Auth {
     None,
-    TokenList(auto_token::AutoToken),
+    TokenFile(token_file::TokenFile),
+    Token(token::Token),
 }
 
 impl Auth {
@@ -22,10 +24,18 @@ impl Auth {
                 Ok(Self::None)
             }
 
-            crate::config::Auth::AutoToken(token) => {
-                info!("Using token list authentication");
+            crate::config::Auth::TokenFile(token_file) => {
+                info!("Using token file authentication");
 
-                Ok(Self::TokenList(auto_token::AutoToken::new(token).await?))
+                Ok(Self::TokenFile(
+                    token_file::TokenFile::new(token_file).await?,
+                ))
+            }
+
+            crate::config::Auth::Token(token) => {
+                info!("Using token authentication");
+
+                Ok(Self::Token(token::Token::new(token)))
             }
         }
     }
@@ -33,7 +43,8 @@ impl Auth {
     pub fn auth_required(&self) -> bool {
         match self {
             Self::None => false,
-            Self::TokenList(_) => true,
+            Self::TokenFile(_) => true,
+            Self::Token(_) => true,
         }
     }
 
@@ -41,7 +52,8 @@ impl Auth {
     pub fn authorize(&self, token: Option<&str>) -> Result<(), Error> {
         match self {
             Self::None => Ok(()),
-            Self::TokenList(tokens) => tokens.authorize(token),
+            Self::TokenFile(token_file) => token_file.authorize(token),
+            Self::Token(token_auth) => token_auth.authorize(token),
         }
     }
 }

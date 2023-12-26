@@ -1,5 +1,6 @@
 use std::{
     env,
+    fmt::{self, Debug, Formatter},
     net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6},
     path::PathBuf,
 };
@@ -36,17 +37,31 @@ fn default_bind() -> Vec<SocketAddr> {
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Auth {
     None,
-    AutoToken(AutoTokenAuth),
+    TokenFile(TokenFileAuth),
+    Token(TokenAuth),
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct AutoTokenAuth {
+pub struct TokenFileAuth {
     #[serde(default = "default_token_path")]
     pub token_file: PathBuf,
 }
 
 fn default_token_path() -> PathBuf {
     PathBuf::from("/var/lib/quartermaster/token")
+}
+
+#[derive(Clone, Deserialize)]
+pub struct TokenAuth {
+    pub token: String,
+}
+
+impl Debug for TokenAuth {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.debug_struct("TokenAuth")
+            .field("token", &"<REDACTED>")
+            .finish()
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -69,6 +84,8 @@ pub struct LocalStorage {
 pub struct S3Storage {
     pub bucket: String,
     pub region: String,
+
+    pub auto_credentials: bool,
 
     pub aws_access_key_id: Option<String>,
     pub aws_secret_access_key: Option<String>,

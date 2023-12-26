@@ -9,12 +9,12 @@ use tracing::info;
 
 use crate::auth::Error;
 
-pub struct AutoToken {
+pub struct TokenFile {
     token: String,
 }
 
-impl AutoToken {
-    pub async fn new(config: &crate::config::AutoTokenAuth) -> Result<Self, Error> {
+impl TokenFile {
+    pub async fn new(config: &crate::config::TokenFileAuth) -> Result<Self, Error> {
         let token = match tokio::fs::read_to_string(&config.token_file).await {
             Ok(token) => token,
             Err(e) => {
@@ -24,7 +24,9 @@ impl AutoToken {
                     let new_token = generate_token()?;
 
                     if let Some(parent) = config.token_file.parent() {
-                        tokio::fs::create_dir_all(&parent).await.map_err(Error::Io)?;
+                        tokio::fs::create_dir_all(&parent)
+                            .await
+                            .map_err(Error::Io)?;
                     }
 
                     save_token(&config.token_file, &new_token).await?;
@@ -50,9 +52,9 @@ impl AutoToken {
     }
 }
 
-impl Debug for AutoToken {
+impl Debug for TokenFile {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.debug_struct("AutoToken")
+        f.debug_struct("TokenFile")
             .field("token", &"<REDACTED>")
             .finish()
     }

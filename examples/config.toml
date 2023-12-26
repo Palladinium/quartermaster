@@ -1,58 +1,109 @@
 [server]
-## The root URL of this registry.
+
+### The externally-reachable root URL of this registry.
 ## This is required, and it will be used to populate the response for the /index/config.json file.
+##
 ## NOTE: If you get mysterious 404s on publish, try removing trailing slashes from this setting,
 ## or set RUST_DEBUG=quartermaster=debug and inspect the logs to see what URLs cargo is requesting.
-root_url = "https://foo.bar"
-## For example, with the above setting, set the registry URL in `.cargo/config.toml` to
+##
+## For example, with the setting below, you shoould set the registry URL in `.cargo/config.toml` to
 ## `sparse+https://foo.bar/index/`
 
-## Addresses to bind to. Defaults to 0.0.0.0:80 and [::]:80.
-bind = ["10.1.1.1:80"]
+root_url = "https://foo.bar"
+
+
+### Addresses to bind to. Defaults to 0.0.0.0:80 and [::]:80.
+
+#bind = ["10.1.1.1:80"]
+
 
 [auth]
 
-## Disable auth entirely, and allow all requests. This is generally a bad idea.
-# type = "none"
+### Disable auth entirely, and allow all requests.
+## This is generally a bad idea, even with a reverse proxy or VPN in front of Quartermaster.
 
-## Simple auth based on a single token.
+type = "none"
+
+
+### Simple auth based on a single token that Quartermaster generates.
+## This is likely the right auth option if you are using the local storage backend.
+##
 ## Quartermaster will generate a token on startup and store it in `token_file`.
 ## You can then give that token to `cargo login` to authenticate your requests.
-## Make sure you prepend "Bearer " to the token when you pass it to cargo.
-type = "auto_token"
-##  The file to store the token in. Optional, defaults to `/var/lib/quartermaster/token`.
-token_file = "/crate-token"
+## NOTE: Make sure you prepend "Bearer " to the token when you pass it to cargo.
+
+#type = "auto_token"
+
+## The file to store the token in. Optional, defaults to `/var/lib/quartermaster/token`.
+
+#token_file = "/crate-token"
+
+
+### Simple auth based on a single token provided by the configuration.
+## This is likely the right auth option if you want Quartermaster to run statelessly in a container
+## and rely on a remote storage backend like S3.
+##
+## The token can be an arbitrary string, and should be sufficiently long and (cryptographically secure) random.
+## An easy way to generate one on Linux is:
+## `openssl rand -base64 64 | tr -d '\n'`
+
+#type = "token"
+#token = "a very secure token"
+
 
 [storage]
 
-## Local filesystem storage
+### Local filesystem storage.
+## Stores all crates and index files using local files.
 
 type = "local"
 path = "/crates"
 
-## S3-backed storage.
+### S3 storage.
+## Stores all crates and index files using S3. The directory layout is identical to the local storage.
 ## The bucket and region keys are required.
-## If none of the specific auth methods are specified, rust-s3 will attempt to find valid credentials automatically.
-# type = "s3"
-# bucket = "my-crates"
-# region = "ap-southeast-2"
 
-## Explicit access/secret key authentication, and optionally a security and session token.
-# aws_access_key_id = "foo"
-# aws_secret_access_key = "shoosh"
-# aws_security_token = "foo"
-# aws_session_token = "foo"
+#type = "s3"
+#bucket = "my-crates"
+#region = "ap-southeast-2"
 
-## Fetch access key through an STS request.
-## The unprefixed `AWS_ROLE_ARN` `AWS_WEB_IDENTITY_TOKEN_FILE` environment variables are also checked if the corresponding config value isn't set.
-# sts_session_name = "quartermaster"
-# sts_role_arn = "foo"
-# sts_web_identity_token_file = "foo"
 
-## Use profile credentials. This reads from ~/.aws/credentials.
-## If profile_section is specified, use that particular section in the credential file.
-# use_profile_credentials = true
-# profile_section = "quartermaster"
+### Automatically try to find credentials.
+## If none of the specific credential settings are specified and `auto_credentials` is true,
+## rust-s3 will attempt to find valid credentials automatically by looking at standard
+## used environment variables and config files.
+## This generally does the right thing and is fine for testing, but you should turn it off and
+## specify the credentials manually in a production environment.
 
-## Use instance credentials.
-# use_instance_credentials = true
+#auto_credentials = true
+
+
+### Explicit access/secret key credentials, and optionally a security/session token.
+## The environment variables `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SECURITY_TOKEN`
+## and `AWS_SESSION_TOKEN` are also checked if the corresponding config value isn't set.
+
+#aws_access_key_id = "foo"
+#aws_secret_access_key = "shoosh"
+#aws_security_token = "foo"
+#aws_session_token = "foo"
+
+
+### Fetch credentials through an STS request.
+## The environment variables `AWS_ROLE_ARN` and `AWS_WEB_IDENTITY_TOKEN_FILE` are also checked if
+## the corresponding config value isn't set.
+
+#sts_session_name = "quartermaster"
+#sts_role_arn = "foo"
+#sts_web_identity_token_file = "foo"
+
+
+### Use profile credentials. This reads from `~/.aws/credentials`.
+## If `profile_section` is specified, use that particular section in the credential file instead of
+## the top-level section.
+
+#use_profile_credentials = true
+#profile_section = "quartermaster"
+
+### Fetche credentials from an EC2 instance's metadata.
+
+#use_instance_credentials = true

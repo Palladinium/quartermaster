@@ -2,6 +2,7 @@ use std::{borrow::Cow, env};
 
 use axum::body::Body;
 use relative_path::RelativePathBuf;
+use tracing::info;
 
 use crate::{crate_name::CrateName, index::IndexFile, storage::Error};
 
@@ -93,6 +94,8 @@ pub fn load_credentials(
     config: &crate::config::S3Storage,
 ) -> Result<s3::creds::Credentials, s3::creds::error::CredentialsError> {
     if let Some(session_name) = &config.sts_session_name {
+        info!("Fetching STS credentials");
+
         let role_arn = if let Some(role_arn) = &config.sts_role_arn {
             Cow::Borrowed(role_arn)
         } else {
@@ -112,11 +115,20 @@ pub fn load_credentials(
     }
 
     if config.use_profile_credentials {
+        info!("Using profile credentials");
         return s3::creds::Credentials::from_profile(config.profile_section.as_deref());
     }
 
     if config.use_instance_credentials {
+        info!("Using instance metadata credentials");
         return s3::creds::Credentials::from_instance_metadata();
+    }
+
+    // Credentials::new will try automatically detecting credentials if the access_key is None
+    match (&config.aws_access_key_id, config.auto_credentials) {
+        (Some(_), _) => info!("Using explicit credentials"),
+        (None, true) => info!("Automatically detecting credentials"),
+        (None, false) => return Err(s3::creds::error::CredentialsError::ConfigNotFound),
     }
 
     s3::creds::Credentials::new(
