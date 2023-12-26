@@ -1,29 +1,31 @@
+use std::io;
+
 use axum::http::StatusCode;
 use tracing::{info, warn};
 
 use crate::error::ErrorResponse;
 
-pub mod token_list;
+pub mod auto_token;
 
 pub enum Auth {
     None,
-    TokenList(token_list::TokenList),
+    TokenList(auto_token::AutoToken),
 }
 
 impl Auth {
-    pub fn new(config: &crate::config::Auth) -> Self {
+    pub async fn new(config: &crate::config::Auth) -> Result<Self, Error> {
         match config {
             crate::config::Auth::None => {
                 warn!("Disabling authentication!");
                 warn!("This is generally a BAD IDEA, as any request can freely read and modify the registry.");
 
-                Self::None
+                Ok(Self::None)
             }
 
-            crate::config::Auth::TokenList(tokens) => {
+            crate::config::Auth::AutoToken(token) => {
                 info!("Using token list authentication");
 
-                Self::TokenList(token_list::TokenList::new(tokens))
+                Ok(Self::TokenList(auto_token::AutoToken::new(token).await?))
             }
         }
     }
@@ -50,6 +52,11 @@ pub enum Error {
     Forbidden,
     #[error("No authorization token was provided")]
     Unauthorized,
+
+    #[error("IO error")]
+    Io(io::Error),
+    #[error("RNG error")]
+    Random(getrandom::Error),
 }
 
 impl From<Error> for ErrorResponse {
@@ -61,6 +68,10 @@ impl From<Error> for ErrorResponse {
             },
             Error::Unauthorized => ErrorResponse {
                 status: StatusCode::UNAUTHORIZED,
+                errors: Vec::new(),
+            },
+            Error::Io(_) | Error::Random(_) => ErrorResponse {
+                status: StatusCode::INTERNAL_SERVER_ERROR,
                 errors: Vec::new(),
             },
         }

@@ -15,12 +15,12 @@ bind = ["10.1.1.1:80"]
 ## Disable auth entirely, and allow all requests. This is generally a bad idea.
 # type = "none"
 
-## Simple auth based on a list of valid tokens.
-## Tokens can be any string that's sufficiently long and hard to guess - a strong password works too.
-## Here's one of many possible ways to generate a token on Linux:
-## $ openssl rand -base64 48
-type = "token_list"
-tokens = []
+## Simple auth based on a single token.
+## Quartermaster will generate a token on startup and store it in `token_file`.
+## You can then give that token to cargo to authenticate your requests.
+type = "auto_token"
+##  The file to store the token in. Optional, defaults to `/var/lib/quartermaster/token`.
+token_file = "/crate-token"
 
 [storage]
 

@@ -1281,8 +1281,10 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "axum-extra",
+ "base64 0.21.5",
  "config",
  "futures",
+ "getrandom",
  "http-body-util",
  "proptest",
  "proptest-derive",

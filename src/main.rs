@@ -51,7 +51,7 @@ async fn main() -> eyre::Result<()> {
 
     let config = Config::load()?;
 
-    let auth = auth::Auth::new(&config.auth);
+    let auth = auth::Auth::new(&config.auth).await?;
     let storage = storage::Storage::new(&config.storage).await?;
     let lock = RwLock::new(());
 
