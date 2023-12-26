@@ -1,15 +1,15 @@
 # Quartermaster
 
-A dead-simple, minimal [Cargo Alternate Registry](https://doc.rust-lang.org/cargo/reference/registries.html) suitable for private registries.
+A dead-simple [Cargo Alternate Registry](https://doc.rust-lang.org/cargo/reference/registries.html) suitable for private registries.
 
 ## Why?
 
-If you are tired of using git dependencies for your private crates and just want your own cargo registry now, Quartermaster is for you.
+If you are tired of using git dependencies for your private crates and just want to host your own cargo registry now, Quartermaster is for you.
 
 ### Features
 
-- Local filesystem or S3-based backing storage
-- Extremely simple token-based auth
+- Local filesystem or S3-based backing storage - No DB required
+- Extremely simple token/password-based auth
 
 ### Non-features
 
@@ -21,19 +21,19 @@ If you need any of these features, you're probably better off looking at alterna
 
 ### Limitations
 
-These are features which I haven't gotten around to implementing yet. Contributions are welcome and appreciated!
+Quartermaster is still very early in development, and these are features which are planned but I haven't gotten around to implementing yet. Contributions are welcome and appreciated!
 
-- **No HTTPS/SSL**: at the moment, Quartermaster is HTTP only. **Do not** expose Quartermaster to the open Internet. Do put it behind a reverse proxy which handles SSL termination like [NGINX](http://nginx.org/), or a VPN like [https://www.wireguard.com/](Wireguard) or [https://openvpn.net/](OpenVPN), or do both!
+- **No HTTPS/SSL**: at the moment, Quartermaster is HTTP only. **Do not** expose Quartermaster to the open Internet. **Do** put it behind a reverse proxy which handles SSL termination like [NGINX](http://nginx.org/), or a VPN like [https://www.wireguard.com/](Wireguard) or [https://openvpn.net/](OpenVPN), or do both!
 - Granular auth: Currently, any valid token has full read/write access to the repository.
 - User/owner endpoints: Currently, all tokens are global, and all crates are owned by nobody. The `owner` endpoints are not implemented.
-- Auth methods: e.g. OpenID. I have no need for them yet.
-- Cross-platform support: While in theory nothing stops Quartermaster from running on other platforms like Windows, MacOS or BSDs, I have only tested it on Linux. Feedback is welcome!
+- More varied and robust auth methods (e.g. OpenID). I have no need for them yet.
+- Cross-platform support: While in theory nothing stops Quartermaster from running on other platforms like Windows, MacOS or BSDs, I have only tested it on x86_64 Linux. Feedback is welcome!
 
 ## Installation
 
 ### Arch Linux
 
-Quartermaster has a [package](http://todo) on the Arch User Repository. Install it with your preferred AUR wrapper or [build it yourself](https://wiki.archlinux.org/title/Arch_User_Repository#Installing_and_upgrading_packages). For example, using yay:
+Quartermaster has a [package](https://aur.archlinux.org/packages/quartermaster) on the Arch User Repository. Install it with your preferred AUR wrapper or [build it yourself](https://wiki.archlinux.org/title/Arch_User_Repository#Installing_and_upgrading_packages). For example, using yay:
 
 ```shell
 yay quartermaster
@@ -67,9 +67,12 @@ Quartermaster uses the excellent [config](https://github.com/mehcode/config-rs) 
 
 By default, Quartermaster expects to be run as a system service and will read `/etc/quartermaster/config.toml`, but this can be overridden by setting the environment variable `QUARTERMASTER_CONFIG_FILE`.
 
-Take care when using config files to set secret values such as auth tokens and S3 credentials. The config file should have restrictive permissions to avoid exposing the secrets to other users on the system.
+Take care when using config files to set secret values such as auth tokens and
+S3 credentials. The config file should have restrictive permissions to avoid
+exposing the secrets to other users on the system.
 
-See the [example configuration](examples/config.toml) for more documentation on the individual options.
+See the [example configuration](examples/config.toml) for more documentation on
+the individual options.
 
 ## License
 
