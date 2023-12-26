@@ -16,16 +16,17 @@ pub struct ErrorResponse {
 impl ErrorResponse {
     pub fn not_found<E: Display>(error: E) -> Self {
         info!("Responding with 404 Not Found: {error}");
-        Self {
-            status: StatusCode::NOT_FOUND,
-            errors: Vec::new(),
-        }
+        Self::from_status(StatusCode::NOT_FOUND)
     }
 
     pub fn internal_server_error<E: Display>(error: E) -> Self {
         error!("Responding with 500 Internal Server Error: {error}");
+        Self::from_status(StatusCode::INTERNAL_SERVER_ERROR)
+    }
+
+    pub fn from_status(status: StatusCode) -> Self {
         Self {
-            status: StatusCode::NOT_FOUND,
+            status,
             errors: Vec::new(),
         }
     }

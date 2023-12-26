@@ -1,6 +1,7 @@
-use std::{borrow::Cow, env, path::PathBuf, str::FromStr};
+use std::{borrow::Cow, env};
 
 use axum::body::Body;
+use relative_path::RelativePathBuf;
 
 use crate::{crate_name::CrateName, index::IndexFile, storage::Error};
 
@@ -10,11 +11,11 @@ pub struct S3Storage {
 
 impl S3Storage {
     pub fn new(config: &crate::config::S3Storage) -> Result<Self, Error> {
-        let credentials = load_credentials(config).map_err(ConfigurationError::Credentials)?;
+        let credentials = load_credentials(config).map_err(Error::S3Credentials)?;
 
         let bucket = s3::Bucket::new(
             &config.bucket,
-            config.region.parse().map_err(ConfigurationError::Region)?,
+            config.region.parse().map_err(Error::S3Region)?,
             credentials,
         )
         .map_err(Error::S3)?;
@@ -22,35 +23,68 @@ impl S3Storage {
         Ok(Self { bucket })
     }
 
-    pub async fn get_index(&self, crate_name: &CrateName) -> Result<IndexFile, Error> {
-        let path = crate_name.index_path();
-
-        // TODO: rust-s3 has very undefined semantics for their error types, so we can't intercept "not found" errors
+    pub async fn read_index_file(&self, name: &CrateName) -> Result<IndexFile, Error> {
         let contents = self
             .bucket
-            .get_object(path.to_str().unwrap())
+            .get_object(name.index_path().as_str())
             .await
-            .map_err(Error::S3)?;
+            .map_err(|e| {
+                if matches!(e, s3::error::S3Error::Http(404, _)) {
+                    Error::NotFound
+                } else {
+                    Error::S3(e)
+                }
+            })?;
 
-        serde_json::from_slice(contents.as_slice()).map_err(Error::Json)
+        IndexFile::from_bytes(contents.as_slice()).map_err(Error::IndexFile)
     }
 
-    pub async fn get_crate(
+    pub async fn read_crate_file(
         &self,
-        crate_name: &CrateName,
-        version: semver::Version,
+        name: &CrateName,
+        version: &semver::Version,
     ) -> Result<Body, Error> {
-        let file_path = PathBuf::from("crates").join(crate_name.crate_path(version));
+        let file_path = RelativePathBuf::from("crates").join(name.crate_path(version));
 
         // TODO: rust-s3 has a get_object_stream method, but its return type is !Send, so we can't convert it to a Body.
         // So we just have to download the whole file and then serve it all at once rather than streaming it.
+        // We could probably use a redirect to a presigned URL instead to avoid this.
         let data = self
             .bucket
-            .get_object(file_path.to_str().unwrap())
+            .get_object(file_path.as_str())
             .await
             .map_err(Error::S3)?;
 
         Ok(Body::from(data.to_vec()))
+    }
+
+    pub async fn write_index_file(
+        &self,
+        name: &CrateName,
+        index_file: &IndexFile,
+    ) -> Result<(), Error> {
+        let contents = index_file.to_bytes().map_err(Error::IndexFile)?;
+
+        self.bucket
+            .put_object(name.index_path().as_str(), &contents)
+            .await
+            .map_err(Error::S3)?;
+
+        Ok(())
+    }
+
+    pub async fn write_crate_file(
+        &self,
+        name: &CrateName,
+        version: &semver::Version,
+        contents: &[u8],
+    ) -> Result<(), Error> {
+        self.bucket
+            .put_object(name.crate_path(version).as_str(), contents)
+            .await
+            .map_err(Error::S3)?;
+
+        Ok(())
     }
 }
 
@@ -92,12 +126,4 @@ pub fn load_credentials(
         config.aws_session_token.as_deref(),
         None,
     )
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum ConfigurationError {
-    #[error("S3 credentials error")]
-    Credentials(#[source] ::s3::creds::error::CredentialsError),
-    #[error("Invalid S3 region")]
-    Region(<::s3::region::Region as FromStr>::Err),
 }

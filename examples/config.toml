@@ -31,11 +31,6 @@ path = "/crates"
 # bucket = "my-crates"
 # region = "ap-southeast-2"
 
-## S3 Credentials.
-## If no specific credential methods are specified, we rely on rust-s3's default methods to attempt to find valid credentials.
-## It will check things like `~/.aws/credentials` and standard AWS environment variables - this is ok for most development and some production environments.
-## If you know what you're doing and want more control, pick a specific authentication method from the ones below.
-
 ## Explicit access/secret key authentication, and optionally a security and session token.
 # aws_access_key_id = "foo"
 # aws_secret_access_key = "shoosh"

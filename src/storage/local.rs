@@ -7,7 +7,7 @@ use tracing::{error, info};
 
 use crate::{crate_name::CrateName, index::IndexFile};
 
-use super::{ Error};
+use super::Error;
 
 pub struct LocalStorage {
     path: PathBuf,
@@ -34,31 +34,21 @@ impl LocalStorage {
         })
     }
 
-    pub async fn get_index(&self, crate_name: &CrateName) -> Result<IndexFile, Error> {
-        let path = crate_name.index_path();
+    pub async fn read_index_file(&self, crate_name: &CrateName) -> Result<IndexFile, Error> {
+        let file_path = crate_name.index_path().to_path(&self.path);
+        let contents = tokio::fs::read(file_path).await.map_err(map_io_error)?;
 
-        // We generate the index path, but just in case...
-        if !path.is_relative() {
-            return Err(Error::NotFound);
-        }
-
-        let file_path = self.path.join(path);
-        let contents = tokio::fs::read_to_string(file_path)
-            .await
-            .map_err(map_io_error)?;
-
-        serde_json::from_str(&contents).map_err(Error::Json)
+        IndexFile::from_bytes(&contents).map_err(Error::IndexFile)
     }
 
-    pub async fn get_crate(
+    pub async fn read_crate_file(
         &self,
         crate_name: &CrateName,
-        version: semver::Version,
+        version: &semver::Version,
     ) -> Result<Body, Error> {
-        let file_path = self
-            .path
-            .join("crates")
-            .join(crate_name.crate_path(version));
+        let file_path = crate_name
+            .crate_path(version)
+            .to_path(self.path.join("crates"));
 
         let file = tokio::fs::File::open(file_path)
             .await
@@ -68,11 +58,44 @@ impl LocalStorage {
             ReaderStream::new(file).map_err(Error::Io),
         ))
     }
+
+    pub async fn write_index_file(
+        &self,
+        crate_name: &CrateName,
+        index_file: &IndexFile,
+    ) -> Result<(), Error> {
+        let file_path = crate_name.index_path().to_path(&self.path);
+        let contents = index_file.to_bytes().map_err(Error::IndexFile)?;
+
+        tokio::fs::write(file_path, contents)
+            .await
+            .map_err(Error::Io)?;
+
+        Ok(())
+    }
+
+    pub async fn write_crate_file(
+        &self,
+        crate_name: &CrateName,
+        version: &semver::Version,
+        contents: &[u8],
+    ) -> Result<(), Error> {
+        let file_path = crate_name
+            .crate_path(version)
+            .to_path(self.path.join("crates"));
+
+        tokio::fs::write(file_path, contents)
+            .await
+            .map_err(Error::Io)?;
+
+        Ok(())
+    }
 }
 
 fn map_io_error(e: io::Error) -> Error {
-    match e.kind() {
-        io::ErrorKind::NotFound | io::ErrorKind::PermissionDenied => Error::NotFound,
-        _ => Error::Io(e),
+    if matches!(e.kind(), io::ErrorKind::NotFound) {
+        Error::NotFound
+    } else {
+        Error::Io(e)
     }
 }

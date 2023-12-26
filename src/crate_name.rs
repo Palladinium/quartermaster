@@ -1,17 +1,16 @@
 use std::{
     borrow::Cow,
     fmt::{self, Display, Formatter},
-    path::{self, Path, PathBuf},
 };
 
-use serde::{de::Error, Deserialize, Serialize};
+use relative_path::{RelativePath, RelativePathBuf};
+use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 
 mod forbidden;
 
 use forbidden::*;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize)]
-#[serde(transparent)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct CrateName(String);
 
 impl CrateName {
@@ -49,20 +48,16 @@ impl CrateName {
         Ok(Self(crate_name_lower))
     }
 
-    pub fn from_index_path(path: &Path) -> Result<Self, IndexPathError> {
+    pub fn from_index_path(path: &RelativePath) -> Result<Self, IndexPathError> {
         let mut components_iter = path.components();
         let components: Vec<_> = components_iter
             .by_ref()
-            .skip_while(|c| c == &path::Component::RootDir)
             .take(3)
             .map(|c| match c {
-                path::Component::Prefix(_)
-                | path::Component::RootDir
-                | path::Component::CurDir
-                | path::Component::ParentDir => Err(IndexPathError::ForbiddenComponent),
-                path::Component::Normal(c) => {
-                    let c = c.to_str().ok_or(IndexPathError::ForbiddenComponent)?;
-
+                relative_path::Component::CurDir | relative_path::Component::ParentDir => {
+                    Err(IndexPathError::ForbiddenComponent)
+                }
+                relative_path::Component::Normal(c) => {
                     if !c.is_ascii() {
                         return Err(IndexPathError::ForbiddenComponent);
                     }
@@ -123,20 +118,20 @@ impl CrateName {
         Ok(Self::new(crate_name)?)
     }
 
-    pub fn index_path(&self) -> PathBuf {
+    pub fn index_path(&self) -> RelativePathBuf {
         match self.0.len() {
             0 => unreachable!(),
-            1 => PathBuf::from("1").join(&self.0),
-            2 => PathBuf::from("2").join(&self.0),
-            3 => PathBuf::from("3").join(&self.0[0..1]).join(&self.0),
-            _ => PathBuf::from(&self.0[0..2])
+            1 => RelativePathBuf::from("1").join(&self.0),
+            2 => RelativePathBuf::from("2").join(&self.0),
+            3 => RelativePathBuf::from("3").join(&self.0[0..1]).join(&self.0),
+            _ => RelativePathBuf::from(&self.0[0..2])
                 .join(&self.0[2..4])
                 .join(&self.0),
         }
     }
 
-    pub fn crate_path(&self, version: semver::Version) -> PathBuf {
-        PathBuf::from(&self.0)
+    pub fn crate_path(&self, version: &semver::Version) -> RelativePathBuf {
+        RelativePathBuf::from(&self.0)
             .join(version.to_string())
             .join(format!("{}.crate", &self.0))
     }
@@ -148,10 +143,19 @@ impl Display for CrateName {
     }
 }
 
+impl Serialize for CrateName {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.0.serialize(serializer)
+    }
+}
+
 impl<'de> Deserialize<'de> for CrateName {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         let s: Cow<'de, str> = Deserialize::deserialize(deserializer)?;
         Self::new(&s).map_err(D::Error::custom)

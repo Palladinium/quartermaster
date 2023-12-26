@@ -38,7 +38,7 @@ Quartermaster has a [package](http://todo) on the Arch User Repository. Install 
 yay quartermaster
 ```
 
-Configure Quartermaster by editing `/etc/quartermaster/config.toml` and `/etc/quartermaster/secrets.toml`, and then start/enable the systemd service:
+Configure Quartermaster by editing `/etc/quartermaster/config.toml`, and then start/enable the systemd service:
 
 ```shell
 systemctl enable quartermaster.service
@@ -72,4 +72,4 @@ See the [example configuration](examples/config.toml) for more documentation on 
 
 ## License
 
-This project and all contributions to it are dual-licensed under the Apache-2.0 and MIT licenses.
+This project and all contributions to it are licensed under the GPL General Public License v3.
