@@ -25,6 +25,7 @@ These are features which I haven't gotten around to implementing yet. Contributi
 
 - **No HTTPS/SSL**: at the moment, Quartermaster is HTTP only. **Do not** expose Quartermaster to the open Internet. Do put it behind a reverse proxy which handles SSL termination like [NGINX](http://nginx.org/), or a VPN like [https://www.wireguard.com/](Wireguard) or [https://openvpn.net/](OpenVPN), or do both!
 - Granular auth: Currently, any valid token has full read/write access to the repository.
+- User/owner endpoints: Currently, all tokens are global, and all crates are owned by nobody. The `owner` endpoints are not implemented.
 - Auth methods: e.g. OpenID. I have no need for them yet.
 - Cross-platform support: While in theory nothing stops Quartermaster from running on other platforms like Windows, MacOS or BSDs, I have only tested it on Linux. Feedback is welcome!
 

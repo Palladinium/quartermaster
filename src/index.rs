@@ -15,7 +15,7 @@ use crate::{crate_name::CrateName, feature_name::FeatureName};
 #[serde(rename_all = "kebab-case")]
 pub struct IndexConfig {
     pub dl: Url,
-    pub api: Url,
+    pub api: String,
     pub auth_required: bool,
 }
 
@@ -87,7 +87,7 @@ pub struct IndexEntry {
     pub links: Option<String>,
     /// The minimal supported Rust version (optional)
     /// This must be a valid version requirement without an operator (e.g. no `=`)
-    pub rust_version: MinRustVersion,
+    pub rust_version: Option<MinRustVersion>,
 }
 
 #[derive(Serialize, Deserialize)]

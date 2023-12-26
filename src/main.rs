@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 use axum::{
     body::{Body, HttpBody},
     extract::State,
-    http::StatusCode,
+    http::{StatusCode, Uri},
     response::IntoResponse,
     routing::{get, put},
     Json, Router,
@@ -20,9 +20,10 @@ use index::{DependencyKind, IndexConfig, IndexDependency, IndexEntry, IndexFile,
 use relative_path::RelativePathBuf;
 use semver::BuildMetadata;
 use serde::{Deserialize, Serialize};
-use simple_eyre::eyre;
+use stable_eyre::eyre;
 use tokio::sync::RwLock;
-use tracing::{debug, warn};
+use tracing::{debug, info, level_filters::LevelFilter, warn};
+use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
 use url::Url;
 
 mod auth;
@@ -37,8 +38,16 @@ use crate::{config::Config, crate_name::CrateName};
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
-    simple_eyre::install()?;
-    tracing_subscriber::fmt::init();
+    stable_eyre::install()?;
+
+    tracing_subscriber::fmt()
+        .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
+        .with_env_filter(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::INFO.into())
+                .from_env_lossy(),
+        )
+        .init();
 
     let config = Config::load()?;
 
@@ -55,6 +64,7 @@ async fn main() -> eyre::Result<()> {
         lock,
     });
 
+    // TODO: Crate search, owner endpoints, /me endpoint
     let router = Router::new()
         .route("/index/config.json", get(get_index_config))
         .typed_get(get_index_file)
@@ -62,6 +72,7 @@ async fn main() -> eyre::Result<()> {
         .route("/api/v1/crates/new", put(put_publish_crate))
         .typed_delete(delete_yank_crate)
         .typed_put(put_unyank_crate)
+        .fallback(fallback)
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(bind.as_slice()).await?;
@@ -84,20 +95,12 @@ async fn get_index_config(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<IndexConfig>, ErrorResponse> {
     Ok(Json(IndexConfig {
-        dl: state
-            .config
-            .server
-            .root_url
+        dl: Url::parse(&state.config.server.root_url)
+            .map_err(ErrorResponse::internal_server_error)?
             .join("crates")
             .map_err(ErrorResponse::internal_server_error)?,
 
-        api: state
-            .config
-            .server
-            .root_url
-            .join("api")
-            .map_err(ErrorResponse::internal_server_error)?,
-
+        api: state.config.server.root_url.clone(),
         auth_required: state.auth.auth_required(),
     }))
 }
@@ -225,7 +228,7 @@ struct PublishRequest {
     links: Option<String>,
     /// The minimal supported Rust version (optional)
     /// This must be a valid version requirement without an operator (e.g. no `=`)
-    rust_version: MinRustVersion,
+    rust_version: Option<MinRustVersion>,
 }
 
 #[derive(Deserialize)]
@@ -316,8 +319,10 @@ async fn put_publish_crate(
     let json_bytes = body_data
         .get(4..(json_length + 4))
         .ok_or_else(|| ErrorResponse::from_status(StatusCode::BAD_REQUEST))?;
-    let publish_request: PublishRequest =
-        serde_json::from_slice(json_bytes).map_err(|e| ErrorResponse {
+
+    let mut json_deserializer = serde_json::Deserializer::from_slice(json_bytes);
+    let publish_request: PublishRequest = serde_path_to_error::deserialize(&mut json_deserializer)
+        .map_err(|e| ErrorResponse {
             status: StatusCode::BAD_REQUEST,
             errors: vec![ResponseError {
                 detail: e.to_string(),
@@ -429,6 +434,8 @@ async fn put_publish_crate(
             .await?;
     }
 
+    info!("Crate {crate_name} version {crate_version} published");
+
     Ok(Json(PublishResponse {
         warnings: PublishWarnings {
             invalid_categories: Vec::new(),
@@ -485,6 +492,7 @@ async fn delete_yank_crate(
             .await?;
     }
 
+    info!("Crate {crate_name} version {version} yanked");
     Ok(Json(YankResponse { ok: true }))
 }
 
@@ -535,5 +543,12 @@ async fn put_unyank_crate(
             .await?;
     }
 
+    info!("Crate {crate_name} version {version} unyanked");
     Ok(Json(UnyankResponse { ok: true }))
+}
+
+#[tracing::instrument]
+async fn fallback(uri: Uri) -> StatusCode {
+    debug!("Responding 404 to invalid route");
+    StatusCode::NOT_FOUND
 }

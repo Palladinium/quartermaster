@@ -35,7 +35,7 @@ impl LocalStorage {
     }
 
     pub async fn read_index_file(&self, crate_name: &CrateName) -> Result<IndexFile, Error> {
-        let file_path = crate_name.index_path().to_path(&self.path);
+        let file_path = crate_name.index_path().to_path(self.path.join("index"));
         let contents = tokio::fs::read(file_path).await.map_err(map_io_error)?;
 
         IndexFile::from_bytes(&contents).map_err(Error::IndexFile)
@@ -64,9 +64,14 @@ impl LocalStorage {
         crate_name: &CrateName,
         index_file: &IndexFile,
     ) -> Result<(), Error> {
-        let file_path = crate_name.index_path().to_path(&self.path);
+        let file_path = crate_name
+            .index_path()
+            .to_path(self.path.join("index"));
         let contents = index_file.to_bytes().map_err(Error::IndexFile)?;
 
+        tokio::fs::create_dir_all(file_path.parent().unwrap())
+            .await
+            .map_err(Error::Io)?;
         tokio::fs::write(file_path, contents)
             .await
             .map_err(Error::Io)?;
@@ -84,6 +89,9 @@ impl LocalStorage {
             .crate_path(version)
             .to_path(self.path.join("crates"));
 
+        tokio::fs::create_dir_all(file_path.parent().unwrap())
+            .await
+            .map_err(Error::Io)?;
         tokio::fs::write(file_path, contents)
             .await
             .map_err(Error::Io)?;

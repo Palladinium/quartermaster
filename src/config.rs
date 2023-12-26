@@ -7,7 +7,6 @@ use std::{
 
 use config::FileFormat;
 use serde::Deserialize;
-use url::Url;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Config {
@@ -19,7 +18,10 @@ pub struct Config {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Server {
-    pub root_url: Url,
+    /// NOTE: This is a `String` rather than a `Url` because `Url` always appends a trailing slash
+    /// if no path is provided, which breaks in the simplest configuration becuse Cargo introduces an extra slash,
+    /// resulting in invalid URLs like `http://foo.bar//api/v1/crates/new`
+    pub root_url: String,
     #[serde(default = "default_bind")]
     pub bind: Vec<SocketAddr>,
 }

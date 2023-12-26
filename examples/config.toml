@@ -1,7 +1,11 @@
 [server]
-## The root URL through which this registry can be reached.
+## The root URL of this registry.
 ## This is required, and it will be used to populate the response for the /index/config.json file.
-root_url = "http://foo.bar/"
+## NOTE: If you get mysterious 404s on publish, try removing trailing slashes from this setting,
+## or set RUST_DEBUG=quartermaster=debug and inspect the logs to see what URLs cargo is requesting.
+root_url = "https://foo.bar"
+## For example, with the above setting, set the registry URL in `.cargo/config.toml` to
+## `sparse+https://foo.bar/index/`
 
 ## Addresses to bind to. Defaults to 0.0.0.0:80 and [::]:80.
 bind = ["10.1.1.1:80"]

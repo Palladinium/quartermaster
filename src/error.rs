@@ -6,7 +6,7 @@ use axum::{
     Json,
 };
 use serde::Serialize;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 pub struct ErrorResponse {
     pub status: StatusCode,
@@ -39,6 +39,15 @@ struct ErrorResponseBody {
 
 impl IntoResponse for ErrorResponse {
     fn into_response(self) -> Response {
+        debug!("Error response: {}", self.status);
+
+        if !self.errors.is_empty() {
+            debug!("Errors");
+            for error in self.errors.iter() {
+                debug!("  {}", &error.detail);
+            }
+        }
+
         let body = ErrorResponseBody {
             errors: self.errors,
         };
