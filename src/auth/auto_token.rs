@@ -1,6 +1,7 @@
 use std::{
     fmt::{self, Debug, Formatter},
     io,
+    path::Path,
 };
 
 use base64::Engine;
@@ -26,9 +27,7 @@ impl AutoToken {
                         tokio::fs::create_dir_all(parent).await.map_err(Error::Io)?;
                     }
 
-                    tokio::fs::write(&config.token_file, &new_token)
-                        .await
-                        .map_err(Error::Io)?;
+                    save_token(&config.token_file, &new_token).await?;
 
                     new_token
                 } else {
@@ -63,4 +62,25 @@ fn generate_token() -> Result<String, Error> {
     let mut bytes = [0; 64];
     getrandom::getrandom(&mut bytes).map_err(Error::Random)?;
     Ok(base64::engine::general_purpose::STANDARD.encode(bytes))
+}
+
+#[cfg(unix)]
+async fn save_token(path: &Path, token: &str) -> Result<(), Error> {
+    use tokio::{fs::OpenOptions, io::AsyncWriteExt};
+
+    let mut file = OpenOptions::new()
+        .create(true)
+        .mode(0o600)
+        .open(path)
+        .await
+        .map_err(Error::Io)?;
+    file.write_all(token.as_bytes()).await.map_err(Error::Io)?;
+
+    Ok(())
+}
+
+// TODO: Figure out how to make this more secure on non-unix platforms
+#[cfg(not(unix))]
+async fn save_token(path: &Path, token: &str) -> Result<(), Error> {
+    tokio::fs::write(path, token).await.map_err(Error::Io)
 }

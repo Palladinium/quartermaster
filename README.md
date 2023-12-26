@@ -27,7 +27,7 @@ Quartermaster is still very early in development, and these are features which a
 - Granular auth: Currently, any valid token has full read/write access to the repository.
 - User/owner endpoints: Currently, all tokens are global, and all crates are owned by nobody. The `owner` endpoints are not implemented.
 - More varied and robust auth methods (e.g. OpenID). I have no need for them yet.
-- Cross-platform support: While in theory nothing stops Quartermaster from running on other platforms like Windows, MacOS or BSDs, I have only tested it on x86_64 Linux. Feedback is welcome!
+- Cross-platform support: While in theory nothing stops Quartermaster from running on other platforms like Windows, MacOS or BSDs, I have only tested it on x86_64 Linux and the default values for the configuration reflect this.
 
 ## Installation
 
