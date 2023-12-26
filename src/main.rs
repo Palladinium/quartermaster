@@ -64,6 +64,14 @@ async fn main() -> eyre::Result<()> {
         lock,
     });
 
+    info!(
+        "Serving on {}",
+        bind.iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+
     // TODO: Crate search, owner endpoints, /me endpoint
     let router = Router::new()
         .route("/index/config.json", get(get_index_config))
