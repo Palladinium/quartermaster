@@ -17,7 +17,8 @@ bind = ["10.1.1.1:80"]
 
 ## Simple auth based on a single token.
 ## Quartermaster will generate a token on startup and store it in `token_file`.
-## You can then give that token to cargo to authenticate your requests.
+## You can then give that token to `cargo login` to authenticate your requests.
+## Make sure you prepend "Bearer " to the token when you pass it to cargo.
 type = "auto_token"
 ##  The file to store the token in. Optional, defaults to `/var/lib/quartermaster/token`.
 token_file = "/crate-token"
