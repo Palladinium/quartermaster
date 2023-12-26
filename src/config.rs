@@ -120,13 +120,10 @@ mod tests {
             "QUARTERMASTER_CONFIG_FILE",
             concat!(env!("CARGO_MANIFEST_DIR"), "/examples/config.toml"),
         );
-        env::set_var("QUARTERMASTER__SERVER__ROOT_URL", "http://some.other.url/");
+        env::set_var("QUARTERMASTER__SERVER__ROOT_URL", "http://some.other.url");
 
         let config = Config::load().unwrap();
 
-        assert_eq!(
-            config.server.root_url,
-            Url::parse("http://some.other.url/").unwrap()
-        );
+        assert_eq!(config.server.root_url, "http://some.other.url");
     }
 }

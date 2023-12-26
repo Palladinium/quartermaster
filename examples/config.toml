@@ -31,6 +31,7 @@ path = "/crates"
 
 ## S3-backed storage.
 ## The bucket and region keys are required.
+## If none of the specific auth methods are specified, rust-s3 will attempt to find valid credentials automatically.
 # type = "s3"
 # bucket = "my-crates"
 # region = "ap-southeast-2"

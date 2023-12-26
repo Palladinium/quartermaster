@@ -205,8 +205,6 @@ pub enum CrateNameError {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use super::*;
 
     use proptest::prelude::*;
@@ -219,7 +217,7 @@ mod tests {
 
         #[test]
         fn crate_name_from_index_path_doesnt_panic(s in "\\PC*") {
-            let _ = CrateName::from_index_path(Path::new(&s));
+            let _ = CrateName::from_index_path(RelativePath::new(&s));
         }
 
         #[test]
@@ -231,9 +229,8 @@ mod tests {
 
         #[test]
         fn crate_name_index_path_is_consistent(s in "\\PC*") {
-            if let Ok(name) = CrateName::from_index_path(Path::new(&s)) {
-                assert_eq!(Path::new(&s.to_lowercase()), &name.index_path());
-                name.index_path().to_str().unwrap();
+            if let Ok(name) = CrateName::from_index_path(RelativePath::new(&s)) {
+                assert_eq!(RelativePath::new(&s.to_lowercase()), &name.index_path());
             }
         }
     }
