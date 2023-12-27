@@ -23,9 +23,9 @@ If you need any of these features, you're probably better off looking at alterna
 
 Quartermaster is still very early in development, and these are features which are planned but I haven't gotten around to implementing yet. Contributions are welcome and appreciated!
 
-- **No HTTPS/SSL**: at the moment, Quartermaster is HTTP only. **Do not** expose Quartermaster to the open Internet. **Do** put it behind a reverse proxy which handles SSL termination like [NGINX](http://nginx.org/), or a VPN like [https://www.wireguard.com/](Wireguard) or [https://openvpn.net/](OpenVPN), or do both!
-- Granular auth: Currently, any valid token has full read/write access to the repository.
-- User/owner endpoints: Currently, all tokens are global, and all crates are owned by nobody. The `owner` endpoints are not implemented.
+- **No HTTPS/SSL**: at the moment, Quartermaster is HTTP only. **Do not** expose Quartermaster to the open Internet. **Do** put it behind a correctly configured reverse proxy which handles SSL termination like [NGINX](http://nginx.org/), or a VPN like [https://www.wireguard.com/](Wireguard) or [https://openvpn.net/](OpenVPN), or do both!
+- Granular auth: Currently, a valid token has full read/write access to the repository.
+- User/owner endpoints: Currently, tokens are global, and all crates are owned by nobody. The various `owner` endpoints are not implemented.
 - More varied and robust auth methods (e.g. OpenID). I have no need for them yet.
 - Cross-platform support: While in theory nothing stops Quartermaster from running on other platforms like Windows, MacOS or BSDs, I have only tested it on x86_64 Linux and the default values for the configuration reflect this.
 
@@ -45,20 +45,20 @@ Configure Quartermaster by editing `/etc/quartermaster/config.toml`, and then st
 systemctl enable quartermaster.service
 ```
 
-### Cargo
-
-You can compile Quartermaster yourself with cargo.
-
-```shell
-cargo install --frozen quartermaster
-```
-
 ### Docker
 
 If you prefer running Quartermaster in a container, an [image](https://hub.docker.com/r/palladinium/quartermaster) is available on DockerHub. The preferred method of configuration when using Docker is through environment variables, but config files are still supported.
 
 ```shell
 docker pull palladinium/quartermaster
+```
+
+### Cargo
+
+You can compile Quartermaster yourself with cargo.
+
+```shell
+cargo install --frozen quartermaster
 ```
 
 ## Configuration
