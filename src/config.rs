@@ -78,13 +78,14 @@ pub struct LocalStorage {
     pub path: PathBuf,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[cfg(feature = "s3")]
 pub struct S3Storage {
     pub bucket: String,
     pub region: String,
 
+    #[serde(default)]
     pub auto_credentials: bool,
 
     pub aws_access_key_id: Option<String>,
@@ -96,10 +97,21 @@ pub struct S3Storage {
     pub sts_role_arn: Option<String>,
     pub sts_web_identity_token_file: Option<String>,
 
+    #[serde(default)]
     pub use_profile_credentials: bool,
     pub profile_section: Option<String>,
 
+    #[serde(default)]
     pub use_instance_credentials: bool,
+}
+
+impl Debug for S3Storage {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.debug_struct("S3Storage")
+            .field("bucket", &self.bucket)
+            .field("region", &self.region)
+            .finish_non_exhaustive()
+    }
 }
 
 impl Config {

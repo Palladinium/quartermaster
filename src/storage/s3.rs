@@ -25,9 +25,11 @@ impl S3Storage {
     }
 
     pub async fn read_index_file(&self, name: &CrateName) -> Result<IndexFile, Error> {
+        let file_path = RelativePathBuf::from("index").join(name.index_path());
+
         let contents = self
             .bucket
-            .get_object(name.index_path().as_str())
+            .get_object(file_path.as_str())
             .await
             .map_err(|e| {
                 if matches!(e, s3::error::S3Error::Http(404, _)) {
@@ -64,10 +66,11 @@ impl S3Storage {
         name: &CrateName,
         index_file: &IndexFile,
     ) -> Result<(), Error> {
+        let file_path = RelativePathBuf::from("index").join(name.index_path());
         let contents = index_file.to_bytes().map_err(Error::IndexFile)?;
 
         self.bucket
-            .put_object(name.index_path().as_str(), &contents)
+            .put_object(file_path.as_str(), &contents)
             .await
             .map_err(Error::S3)?;
 
@@ -80,8 +83,10 @@ impl S3Storage {
         version: &semver::Version,
         contents: &[u8],
     ) -> Result<(), Error> {
+        let file_path = RelativePathBuf::from("crates").join(name.crate_path(version));
+
         self.bucket
-            .put_object(name.crate_path(version).as_str(), contents)
+            .put_object(file_path.as_str(), contents)
             .await
             .map_err(Error::S3)?;
 
