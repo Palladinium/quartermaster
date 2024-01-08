@@ -179,9 +179,6 @@ async fn get_download_crate(
     Ok(body)
 }
 
-// TODO: Make configurable?
-const MAX_BODY_SIZE: usize = 100 * 1024 * 1024;
-
 #[derive(Deserialize)]
 #[allow(dead_code)]
 struct PublishRequest {
@@ -302,21 +299,24 @@ async fn put_publish_crate(
         return Err(ErrorResponse::from_status(StatusCode::LENGTH_REQUIRED));
     };
 
-    if body_size > u64::try_from(MAX_BODY_SIZE).unwrap() {
+    if body_size > state.config.crates.max_publish_size.as_u64() {
         return Err(ErrorResponse::from_status(StatusCode::PAYLOAD_TOO_LARGE));
     }
 
-    let body_data = Limited::new(body, MAX_BODY_SIZE)
-        .collect()
-        .await
-        .map_err(|e| {
-            if e.is::<LengthLimitError>() {
-                ErrorResponse::from_status(StatusCode::PAYLOAD_TOO_LARGE)
-            } else {
-                ErrorResponse::from_status(StatusCode::INTERNAL_SERVER_ERROR)
-            }
-        })?
-        .to_bytes();
+    let body_data = Limited::new(
+        body,
+        usize::try_from(state.config.crates.max_publish_size.as_u64()).unwrap(),
+    )
+    .collect()
+    .await
+    .map_err(|e| {
+        if e.is::<LengthLimitError>() {
+            ErrorResponse::from_status(StatusCode::PAYLOAD_TOO_LARGE)
+        } else {
+            ErrorResponse::from_status(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    })?
+    .to_bytes();
 
     let json_length_bytes = body_data
         .get(0..4)

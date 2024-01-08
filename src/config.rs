@@ -5,12 +5,14 @@ use std::{
     path::PathBuf,
 };
 
+use bytesize::ByteSize;
 use config::FileFormat;
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Config {
     pub server: Server,
+    pub crates: Crates,
     pub auth: Auth,
     pub storage: Storage,
 }
@@ -31,6 +33,17 @@ fn default_bind() -> Vec<SocketAddr> {
         SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 80)),
         SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, 80, 0, 0)),
     ]
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Crates {
+    #[serde(default = "default_max_publish_size")]
+    pub max_publish_size: ByteSize,
+}
+
+fn default_max_publish_size() -> ByteSize {
+    ByteSize::mib(100)
 }
 
 #[derive(Clone, Debug, Deserialize)]

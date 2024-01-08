@@ -16,6 +16,11 @@ root_url = "https://foo.bar"
 
 #bind = ["10.1.1.1:80"]
 
+[crates]
+
+### The maximum size of a crate publish payload allowed by this registry. Defaults to 100 MiB.
+## Supports human-readable prefixes (KB, MB, KiB, etc.)
+#max_publish_size = "100 MiB"
 
 [auth]
 
@@ -34,7 +39,7 @@ type = "none"
 
 #type = "auto_token"
 
-## The file to store the token in. Optional, defaults to `/var/lib/quartermaster/token`.
+## The file to store the token in. Defaults to `/var/lib/quartermaster/token`.
 
 #token_file = "/crate-token"
 

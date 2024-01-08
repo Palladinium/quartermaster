@@ -28,6 +28,7 @@ Quartermaster is still very early in development, and these are features which a
 - User/owner endpoints: Currently, tokens are global, and all crates are owned by nobody. The various `owner` endpoints are not implemented.
 - More varied and robust auth methods (e.g. OpenID). I have no need for them yet.
 - Cross-platform support: While in theory nothing stops Quartermaster from running on other platforms like Windows, MacOS or BSDs, I have only tested it on x86_64 Linux and the default values for the configuration reflect this.
+- CLI management utility: Instead of a Web UI, I'm planning to add a CLI utility to perform registry maintenance tasks which cannot be performed through the Cargo API (e.g. fully removing crates, managing auth)
 
 ## Installation
 
