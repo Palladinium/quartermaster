@@ -132,8 +132,6 @@ async fn get_index_file(
     let path = RelativePathBuf::from(path);
     let crate_name = CrateName::from_index_path(&path).map_err(ErrorResponse::not_found)?;
 
-    debug!("Fetching index file for crate {crate_name}");
-
     let index_file = {
         let _guard = state.lock.read().await;
         state.storage.read_index_file(&crate_name).await?
@@ -166,8 +164,6 @@ async fn get_download_crate(
 
     let crate_name = CrateName::new(&crate_name).map_err(ErrorResponse::not_found)?;
     let version = semver::Version::parse(&version).map_err(ErrorResponse::not_found)?;
-
-    debug!("Fetching crate file for {crate_name}");
 
     let body = {
         let _guard = state.lock.read().await;
@@ -347,8 +343,6 @@ async fn put_publish_crate(
         .get((4 + json_length + 4)..(4 + json_length + 4 + crate_length))
         .ok_or_else(|| ErrorResponse::from_status(StatusCode::BAD_REQUEST))?;
 
-    let cksum = sha256::digest(crate_data);
-
     let crate_name = publish_request.name;
     let crate_version = semver::Version {
         major: publish_request.vers.major,
@@ -359,6 +353,8 @@ async fn put_publish_crate(
         build: BuildMetadata::EMPTY,
     };
 
+    info!("All data received, publishing crate {crate_name} version {crate_version}");
+
     if !publish_request.vers.build.is_empty() {
         warn!("Ignoring build metadata");
         warnings.push(format!(
@@ -367,10 +363,14 @@ async fn put_publish_crate(
         ));
     }
 
+    info!("Computing crate checksum");
+    let cksum = sha256::digest(crate_data);
+
     {
         let _guard = state.lock.write().await;
 
         // Load the index (if it exists) and check that this crate version doesn't already exist
+        info!("Checking crate version doesn't exist");
 
         let mut index_file = match state.storage.read_index_file(&crate_name).await {
             Ok(index) => index,
@@ -442,7 +442,7 @@ async fn put_publish_crate(
             .await?;
     }
 
-    info!("Crate {crate_name} version {crate_version} published");
+    info!("Crate {crate_name} version {crate_version} successfully published");
 
     Ok(Json(PublishResponse {
         warnings: PublishWarnings {

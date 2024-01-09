@@ -1,6 +1,7 @@
 use std::{io, str::FromStr};
 
 use axum::{body::Body, http::StatusCode};
+use tracing::instrument;
 
 use crate::{
     crate_name::CrateName,
@@ -31,6 +32,7 @@ impl Storage {
     }
 
     // TODO: Add an option to just fetch the index-file as is or genrate a redirect, without always reserializing it
+    #[instrument(level = "debug", skip(self))]
     pub async fn read_index_file(&self, name: &CrateName) -> Result<IndexFile, Error> {
         match self {
             Storage::Local(local) => local.read_index_file(name).await,
@@ -39,6 +41,7 @@ impl Storage {
         }
     }
 
+    #[instrument(level = "debug", skip(self))]
     pub async fn read_crate_file(
         &self,
         name: &CrateName,
@@ -51,6 +54,7 @@ impl Storage {
         }
     }
 
+    #[instrument(level = "debug", skip(self, index_file))]
     pub async fn write_index_file(
         &self,
         name: &CrateName,
@@ -63,6 +67,7 @@ impl Storage {
         }
     }
 
+    #[instrument(level = "debug", skip(self, contents))]
     pub async fn write_crate_file(
         &self,
         name: &CrateName,
@@ -115,7 +120,7 @@ impl From<Error> for ErrorResponse {
             Error::Io(_) | Error::IndexFile(_) => ErrorResponse {
                 status: StatusCode::INTERNAL_SERVER_ERROR,
                 errors: vec![ResponseError {
-                    detail: String::from("Error fetching file"),
+                    detail: String::from("Storage error"),
                 }],
             },
 
@@ -123,7 +128,7 @@ impl From<Error> for ErrorResponse {
             Error::S3(_) | Error::S3Credentials(_) | Error::S3Region(_) => ErrorResponse {
                 status: StatusCode::INTERNAL_SERVER_ERROR,
                 errors: vec![ResponseError {
-                    detail: String::from("Error fetching file"),
+                    detail: String::from("Storage error"),
                 }],
             },
         }

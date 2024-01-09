@@ -37,7 +37,7 @@ type = "none"
 ## You can then give that token to `cargo login` to authenticate your requests.
 ## NOTE: Make sure you prepend "Bearer " to the token when you pass it to cargo.
 
-#type = "auto_token"
+#type = "token_file"
 
 ## The file to store the token in. Defaults to `/var/lib/quartermaster/token`.
 
