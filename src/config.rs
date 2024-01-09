@@ -12,6 +12,7 @@ use serde::Deserialize;
 #[derive(Clone, Debug, Deserialize)]
 pub struct Config {
     pub server: Server,
+    #[serde(default)]
     pub crates: Crates,
     pub auth: Auth,
     pub storage: Storage,
@@ -30,8 +31,8 @@ pub struct Server {
 
 fn default_bind() -> Vec<SocketAddr> {
     vec![
-        SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 80)),
-        SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, 80, 0, 0)),
+        SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 8000)),
+        SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, 8000, 0, 0)),
     ]
 }
 
@@ -40,6 +41,14 @@ fn default_bind() -> Vec<SocketAddr> {
 pub struct Crates {
     #[serde(default = "default_max_publish_size")]
     pub max_publish_size: ByteSize,
+}
+
+impl Default for Crates {
+    fn default() -> Self {
+        Self {
+            max_publish_size: default_max_publish_size(),
+        }
+    }
 }
 
 fn default_max_publish_size() -> ByteSize {

@@ -12,9 +12,9 @@
 root_url = "https://foo.bar"
 
 
-### Addresses to bind to. Defaults to 0.0.0.0:80 and [::]:80.
+### Addresses to bind to. Defaults to 0.0.0.0:8000 and [::]:8000.
 
-#bind = ["10.1.1.1:80"]
+#bind = ["10.1.1.1:1234"]
 
 [crates]
 
