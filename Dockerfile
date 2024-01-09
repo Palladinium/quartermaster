@@ -1,7 +1,14 @@
-FROM rust:latest as build
+FROM rust:1.75-bullseye as build
 
 COPY . /src
 WORKDIR /src
 RUN cargo build --release
 
-CMD ["/src/target/release/quartermaster"]
+FROM debian:bullseye-slim
+
+COPY COPYING ./
+
+COPY --from=build /src/target/release/quartermaster ./quartermaster
+
+ENTRYPOINT ["./quartermaster"]
+CMD []
