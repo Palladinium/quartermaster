@@ -4,7 +4,6 @@ version = "0.2.0"
 edition = "2021"
 description = "A dead-simple alternate registry suitable for private registries"
 license = "GPL-3.0"
-license-file = "COPYING"
 repository = "https://github.com/Palladinium/quartermaster"
 categories = ["command-line-utilities", "development-tools"]
 keywords = ["cargo", "registry"]
