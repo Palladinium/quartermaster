@@ -32,20 +32,6 @@ Quartermaster is still very early in development, and these are features which a
 
 ## Installation
 
-### Arch Linux
-
-Quartermaster has a [package](https://aur.archlinux.org/packages/quartermaster) on the Arch User Repository. Install it with your preferred AUR wrapper or [build it yourself](https://wiki.archlinux.org/title/Arch_User_Repository#Installing_and_upgrading_packages). For example, using yay:
-
-```shell
-yay quartermaster
-```
-
-Configure Quartermaster by editing `/etc/quartermaster/config.toml`, and then start/enable the systemd service:
-
-```shell
-systemctl enable quartermaster.service
-```
-
 ### Docker
 
 If you prefer running Quartermaster in a container, an [image](https://hub.docker.com/r/palladinium/quartermaster) is available on DockerHub. The preferred method of configuration when using Docker is through environment variables, but config files are still supported.
