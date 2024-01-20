@@ -29,32 +29,19 @@ root_url = "https://foo.bar"
 
 type = "none"
 
-
-### Simple auth based on a single token that Quartermaster generates.
-## This is likely the right auth option if you are using the local storage backend.
+### Simple auth based on a single token hash provided by the configuration.
 ##
-## Quartermaster will generate a token on startup and store it in `token_file`.
-## You can then give that token to `cargo login` to authenticate your requests.
-## NOTE: Make sure you prepend "Bearer " to the token when you pass it to cargo.
-
-#type = "token_file"
-
-## The file to store the token in. Defaults to `/var/lib/quartermaster/token`.
-
-#token_file = "/crate-token"
-
-
-### Simple auth based on a single token provided by the configuration.
-## This is likely the right auth option if you want Quartermaster to run statelessly in a container
-## and rely on a remote storage backend like S3.
+## The token is essentially a password and can be an arbitrary string, as long as it's sufficiently
+## long and random.
 ##
-## The token can be an arbitrary string, and should be sufficiently long and (cryptographically secure) random.
-## An easy way to generate one on Linux is:
-## `openssl rand -base64 64 | tr -d '\n'`
+## The config doesn't store the token itself to prevent accidentally leaking it, and instead it
+## stores a SHA-512 hash of it.
+##
+## For example, on Linux you can generate a token and hash like this:
+## `openssl rand -hex 64 | tee token | sha512sum | awk '{print $1}' > token_hash`
 
 #type = "token"
-#token = "a very secure token"
-
+#token_hash = "a very secure token hash"
 
 [storage]
 

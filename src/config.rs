@@ -22,7 +22,7 @@ pub struct Config {
 #[serde(deny_unknown_fields)]
 pub struct Server {
     /// NOTE: This is a `String` rather than a `Url` because `Url` always appends a trailing slash
-    /// if no path is provided, which breaks in the simplest configuration becuse Cargo introduces an extra slash,
+    /// if no path is provided, which breaks in the simplest configuration because Cargo introduces an extra slash,
     /// resulting in invalid URLs like `http://foo.bar//api/v1/crates/new`
     pub root_url: String,
     #[serde(default = "default_bind")]
@@ -59,29 +59,19 @@ fn default_max_publish_size() -> ByteSize {
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Auth {
     None,
-    TokenFile(TokenFileAuth),
     Token(TokenAuth),
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct TokenFileAuth {
-    #[serde(default = "default_token_path")]
-    pub token_file: PathBuf,
-}
-
-fn default_token_path() -> PathBuf {
-    PathBuf::from("/var/lib/quartermaster/token")
 }
 
 #[derive(Clone, Deserialize)]
 pub struct TokenAuth {
-    pub token: String,
+    #[serde(deserialize_with = "hex::serde::deserialize")]
+    pub token_hash: [u8; 64],
 }
 
 impl Debug for TokenAuth {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.debug_struct("TokenAuth")
-            .field("token", &"<REDACTED>")
+            .field("token_hash", &"<REDACTED>")
             .finish()
     }
 }

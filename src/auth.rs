@@ -1,16 +1,12 @@
-use std::io;
-
 use axum::http::StatusCode;
 use tracing::{info, warn};
 
 use crate::error::ErrorResponse;
 
 pub mod token;
-pub mod token_file;
 
 pub enum Auth {
     None,
-    TokenFile(token_file::TokenFile),
     Token(token::Token),
 }
 
@@ -24,14 +20,6 @@ impl Auth {
                 Ok(Self::None)
             }
 
-            crate::config::Auth::TokenFile(token_file) => {
-                info!("Using token file authentication");
-
-                Ok(Self::TokenFile(
-                    token_file::TokenFile::new(token_file).await?,
-                ))
-            }
-
             crate::config::Auth::Token(token) => {
                 info!("Using token authentication");
 
@@ -43,7 +31,6 @@ impl Auth {
     pub fn auth_required(&self) -> bool {
         match self {
             Self::None => false,
-            Self::TokenFile(_) => true,
             Self::Token(_) => true,
         }
     }
@@ -52,7 +39,6 @@ impl Auth {
     pub fn authorize(&self, token: Option<&str>) -> Result<(), Error> {
         match self {
             Self::None => Ok(()),
-            Self::TokenFile(token_file) => token_file.authorize(token),
             Self::Token(token_auth) => token_auth.authorize(token),
         }
     }
@@ -64,11 +50,6 @@ pub enum Error {
     Forbidden,
     #[error("No authorization token was provided")]
     Unauthorized,
-
-    #[error("IO error")]
-    Io(io::Error),
-    #[error("RNG error")]
-    Random(getrandom::Error),
 }
 
 impl From<Error> for ErrorResponse {
@@ -80,10 +61,6 @@ impl From<Error> for ErrorResponse {
             },
             Error::Unauthorized => ErrorResponse {
                 status: StatusCode::UNAUTHORIZED,
-                errors: Vec::new(),
-            },
-            Error::Io(_) | Error::Random(_) => ErrorResponse {
-                status: StatusCode::INTERNAL_SERVER_ERROR,
                 errors: Vec::new(),
             },
         }

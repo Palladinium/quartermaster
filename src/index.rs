@@ -60,7 +60,7 @@ pub enum IndexFileError {
     Json(#[from] serde_json::Error),
 }
 
-/// Adapted from https://doc.rust-lang.org/cargo/reference/registry-index.html
+/// Adapted from <https://doc.rust-lang.org/cargo/reference/registry-index.html>
 ///
 /// The `v` and `features2` fields are absent, since we always assume `v` is 2.
 #[derive(Serialize, Deserialize)]
@@ -70,7 +70,7 @@ pub struct IndexEntry {
     pub name: CrateName,
     /// The version of the package this row is describing.
     /// This must be a valid version number according to the Semantic
-    /// Versioning 2.0.0 spec at https://semver.org/.
+    /// Versioning 2.0.0 spec at <https://semver.org/>.
     pub vers: semver::Version,
     /// Array of direct dependencies of the package.
     pub deps: Vec<IndexDependency>,
@@ -99,7 +99,7 @@ pub struct IndexDependency {
     pub name: String,
     /// The SemVer requirement for this dependency.
     /// This must be a valid version requirement defined at
-    /// https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html.
+    /// <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html>.
     pub req: semver::VersionReq,
     /// Array of features (as strings) enabled for this dependency.
     pub features: Vec<String>,
