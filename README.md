@@ -1,4 +1,9 @@
 # Quartermaster
+t
+[![Crates.io][crates-badge]][crates-url]
+
+[crates-badge]: https://img.shields.io/crates/v/quartermaster.svg
+[crates-url]: https://crates.io/crates/quartermaster
 
 A dead-simple [Cargo Alternate Registry](https://doc.rust-lang.org/cargo/reference/registries.html) suitable for private registries.
 
