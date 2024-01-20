@@ -38,7 +38,7 @@ type = "none"
 ## stores a SHA-512 hash of it.
 ##
 ## For example, on Linux you can generate a token and hash like this:
-## `openssl rand -hex 64 | tee token | sha512sum | awk '{print $1}' > token_hash`
+## `openssl rand -hex 64 | tee token | tr -d '\n' | sha512sum | awk '{print $1}' > token_hash`
 
 #type = "token"
 #token_hash = "a very secure token hash"
