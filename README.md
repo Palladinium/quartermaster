@@ -9,7 +9,7 @@ If you are tired of using git dependencies for your private crates and just want
 ### Features
 
 - Local filesystem or S3-based backing storage - No DB required
-- Extremely simple token/password-based auth
+- Extremely simple token-based auth
 
 ### Non-features
 
@@ -68,9 +68,7 @@ Quartermaster uses the excellent [config](https://github.com/mehcode/config-rs) 
 
 By default, Quartermaster expects to be run as a system service and will read `/etc/quartermaster/config.toml`, but this can be overridden by setting the environment variable `QUARTERMASTER_CONFIG_FILE`.
 
-Take care when using config files to set secret values such as auth tokens and
-S3 credentials. The config file should have restrictive permissions to avoid
-exposing the secrets to other users on the system.
+Take care when using config files to set secret values such as auth tokens and S3 credentials. The config file should have restrictive permissions to avoid exposing the secrets to other users on the system.
 
 See the [example configuration](examples/config.toml) for more documentation on
 the individual options.
