@@ -1,4 +1,8 @@
-use axum::http::StatusCode;
+use axum::{
+    async_trait,
+    extract::FromRequestParts,
+    http::{header::AUTHORIZATION, request::Parts, StatusCode},
+};
 use tracing::{info, warn};
 
 use crate::error::ErrorResponse;
@@ -63,6 +67,36 @@ impl From<Error> for ErrorResponse {
                 status: StatusCode::UNAUTHORIZED,
                 errors: Vec::new(),
             },
+        }
+    }
+}
+
+/// Extractor to pull the Authorization header.
+/// I'd prefer to use the `typed-headers` feature from axum_extra, but crates.io doesn't specify the
+/// Authorization header scheme and just sets the header to the whole token, rather than
+/// something like `Bearer <token>`, so I just roll my own
+pub struct Authorization(pub String);
+
+impl Authorization {
+    pub fn token(&self) -> &str {
+        &self.0
+    }
+}
+
+#[async_trait]
+impl<S> FromRequestParts<S> for Authorization {
+    type Rejection = StatusCode;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        if let Some(authorization) = parts.headers.get(AUTHORIZATION) {
+            Ok(Self(
+                authorization
+                    .to_str()
+                    .map_err(|_| StatusCode::FORBIDDEN)?
+                    .to_owned(),
+            ))
+        } else {
+            Err(StatusCode::FORBIDDEN)
         }
     }
 }

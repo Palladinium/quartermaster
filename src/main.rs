@@ -1,5 +1,6 @@
 use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 
+use auth::Authorization;
 use axum::{
     body::{Body, HttpBody},
     extract::State,
@@ -8,11 +9,7 @@ use axum::{
     routing::{get, put},
     Json, Router,
 };
-use axum_extra::{
-    headers::{authorization::Bearer, Authorization},
-    routing::{RouterExt, TypedPath},
-    TypedHeader,
-};
+use axum_extra::routing::{RouterExt, TypedPath};
 use error::{ErrorResponse, ResponseError};
 use feature_name::FeatureName;
 use http_body_util::{BodyExt, LengthLimitError, Limited};
@@ -20,6 +17,7 @@ use index::{DependencyKind, IndexConfig, IndexDependency, IndexEntry, IndexFile,
 use relative_path::RelativePathBuf;
 use semver::BuildMetadata;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use stable_eyre::eyre;
 use tokio::sync::RwLock;
 use tracing::{debug, info, level_filters::LevelFilter, warn};
@@ -123,7 +121,7 @@ struct GetIndexFile {
 async fn get_index_file(
     GetIndexFile { path }: GetIndexFile,
     State(state): State<Arc<AppState>>,
-    authorization: Option<TypedHeader<Authorization<Bearer>>>,
+    authorization: Option<Authorization>,
 ) -> Result<Vec<u8>, ErrorResponse> {
     state
         .auth
@@ -156,7 +154,7 @@ async fn get_download_crate(
         version,
     }: GetDownloadCrate,
     State(state): State<Arc<AppState>>,
-    authorization: Option<TypedHeader<Authorization<Bearer>>>,
+    authorization: Option<Authorization>,
 ) -> Result<impl IntoResponse, ErrorResponse> {
     state
         .auth
@@ -282,7 +280,7 @@ struct PublishWarnings {
 #[tracing::instrument(skip_all)]
 async fn put_publish_crate(
     State(state): State<Arc<AppState>>,
-    authorization: Option<TypedHeader<Authorization<Bearer>>>,
+    authorization: Option<Authorization>,
     body: Body,
 ) -> Result<Json<PublishResponse>, ErrorResponse> {
     state
@@ -364,7 +362,9 @@ async fn put_publish_crate(
     }
 
     info!("Computing crate checksum");
-    let cksum = sha256::digest(crate_data);
+    let checksum = Sha256::digest(crate_data);
+    let checksum_array: &[u8] = checksum.as_ref();
+    let cksum = hex::encode(checksum_array);
 
     {
         let _guard = state.lock.write().await;
@@ -472,7 +472,7 @@ async fn delete_yank_crate(
         version,
     }: DeleteYankCrate,
     State(state): State<Arc<AppState>>,
-    authorization: Option<TypedHeader<Authorization<Bearer>>>,
+    authorization: Option<Authorization>,
 ) -> Result<Json<YankResponse>, ErrorResponse> {
     state
         .auth
@@ -523,7 +523,7 @@ async fn put_unyank_crate(
         version,
     }: PutUnyankCrate,
     State(state): State<Arc<AppState>>,
-    authorization: Option<TypedHeader<Authorization<Bearer>>>,
+    authorization: Option<Authorization>,
 ) -> Result<Json<UnyankResponse>, ErrorResponse> {
     state
         .auth
