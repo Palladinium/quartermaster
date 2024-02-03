@@ -31,13 +31,13 @@ type = "none"
 
 ### Simple auth based on a single token hash provided by the configuration.
 ##
-## The token is essentially a password and can be an arbitrary string, as long as it's sufficiently
-## long and random.
-##
 ## The config doesn't store the token itself to prevent accidentally leaking it, and instead it
 ## stores a SHA-512 hash of it.
+## The token is any arbitrary string, and should be generated using cryptographically secure 
+## randomness, with sufficient entropy to resist a brute-force cracking attempt should an attacker 
+## gain access to the hash.
 ##
-## For example, on Linux you can generate a token and hash like this:
+## For example, on Linux you can generate a 64-byte (512 bits of entropy) token and hash like this:
 ## `openssl rand -hex 64 | tee token | tr -d '\n' | sha512sum | awk '{print $1}' > token_hash`
 
 #type = "token"
