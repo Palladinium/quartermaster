@@ -1264,7 +1264,7 @@ dependencies = [
 
 [[package]]
 name = "quartermaster"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "axum",
  "axum-extra",
@@ -1283,6 +1283,7 @@ dependencies = [
  "serde_path_to_error",
  "sha2",
  "stable-eyre",
+ "subtle",
  "thiserror",
  "tokio",
  "tokio-util",

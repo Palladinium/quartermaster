@@ -1,6 +1,7 @@
 use std::fmt::{self, Debug, Formatter};
 
 use sha2::{Digest, Sha512};
+use subtle::ConstantTimeEq;
 
 use crate::auth::Error;
 
@@ -11,7 +12,7 @@ pub struct Token {
 impl Token {
     pub fn new(config: &crate::config::TokenAuth) -> Self {
         Self {
-            token_hash: config.token_hash.clone(),
+            token_hash: config.token_hash,
         }
     }
 
@@ -19,7 +20,9 @@ impl Token {
         let token = token.ok_or(Error::Unauthorized)?;
         let token_hash = Sha512::digest(token);
 
-        if self.token_hash == token_hash.as_slice() {
+        let token_hash_eq = bool::from(self.token_hash.ct_eq(token_hash.as_slice()));
+
+        if token_hash_eq {
             Ok(())
         } else {
             Err(Error::Forbidden)
