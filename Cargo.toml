@@ -1,6 +1,6 @@
 [package]
 name = "quartermaster"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "A dead-simple alternate registry suitable for private registries"
 license = "GPL-3.0"
